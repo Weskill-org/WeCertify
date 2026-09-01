@@ -44,6 +44,19 @@ export function VerificationPanel() {
     [verify],
   );
 
+  // Scanned QR codes link to /?id=WSK-... — verify automatically on arrival.
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current) return;
+    deepLinkHandled.current = true;
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (id && /^[A-Za-z0-9-_/]{4,64}$/.test(id)) {
+      const normalized = id.toUpperCase();
+      setValue(normalized);
+      void runVerification(normalized);
+    }
+  }, [runVerification]);
+
   const handleDetected = useCallback(
     (id: string) => {
       setScannerOpen(false);
