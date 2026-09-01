@@ -176,8 +176,106 @@
     border-color: var(--color-border);
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.022em;
+  }
+}
+
+@utility bg-hero-gradient {
+  background-image: var(--gradient-hero);
+}
+
+@utility bg-gold-gradient {
+  background-image: var(--gradient-gold);
+}
+
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+
+@utility shadow-gold {
+  box-shadow: var(--shadow-gold);
+}
+
+@utility text-balance-tight {
+  text-wrap: balance;
+}
+
+@keyframes ch-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ch-scan {
+  0% {
+    transform: translateY(-2%);
+  }
+  100% {
+    transform: translateY(102%);
+  }
+}
+
+@keyframes ch-seal {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+  60% {
+    transform: scale(1.08) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes ch-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@utility animate-rise {
+  animation: ch-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-scanline {
+  animation: ch-scan 2.1s ease-in-out infinite alternate;
+}
+
+@utility animate-seal {
+  animation: ch-seal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@utility animate-shimmer {
+  background-size: 200% 100%;
+  animation: ch-shimmer 1.6s linear infinite;
 }
