@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificates: {
+        Row: {
+          certificate_number: string
+          certification_title: string
+          created_at: string
+          expiry_date: string | null
+          grade: string | null
+          holder_name: string
+          id: string
+          issue_date: string
+          issuing_authority: string
+          status: string
+        }
+        Insert: {
+          certificate_number: string
+          certification_title: string
+          created_at?: string
+          expiry_date?: string | null
+          grade?: string | null
+          holder_name: string
+          id?: string
+          issue_date: string
+          issuing_authority?: string
+          status?: string
+        }
+        Update: {
+          certificate_number?: string
+          certification_title?: string
+          created_at?: string
+          expiry_date?: string | null
+          grade?: string | null
+          holder_name?: string
+          id?: string
+          issue_date?: string
+          issuing_authority?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
