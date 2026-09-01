@@ -56,7 +56,7 @@ function CertificateCard({
 }: {
   certificate: CertificateRecord;
   tone: keyof typeof TONES;
-  note?: string;
+  note?: string | undefined;
 }) {
   const config = TONES[tone];
   const Icon = config.icon;
