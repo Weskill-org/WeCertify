@@ -29,12 +29,11 @@ const TRUST_SIGNALS = [
   { icon: Lock, label: "No account required" },
 ];
 
-function Index() {
-  const sampleQrValue =
-    typeof window === "undefined"
-      ? "https://certifyhub.weskill.app/?id=WSK-2025-000123"
-      : `${window.location.origin}/?id=WSK-2025-000123`;
+// Stable, SSR-safe absolute URL so the rendered QR matches between server and client.
+const SAMPLE_QR_VALUE =
+  "https://project--3a3f6455-7df7-477f-abc6-f7788111b229.lovable.app/?id=WSK-2025-000123";
 
+function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-hero-gradient">
