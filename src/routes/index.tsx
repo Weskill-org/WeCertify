@@ -125,7 +125,7 @@ function Index() {
 
       <main>
         <HowItWorks />
-        <WhyTrust sampleQrValue={sampleQrValue} />
+        <WhyTrust sampleQrValue={SAMPLE_QR_VALUE} />
       </main>
 
       <SiteFooter />
