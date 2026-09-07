@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Lock, ShieldCheck, Zap } from "lucide-react";
 
 import { BrandLockup } from "@/components/certifyhub/Brand";
@@ -49,6 +49,9 @@ function Index() {
             <a href="#why-trust" className="transition-colors hover:text-gold">
               Why trust us
             </a>
+            <Link to="/auth" className="transition-colors hover:text-gold">
+              Staff sign in
+            </Link>
             <a
               href="#verify"
               className="rounded-full bg-gold-gradient px-4 py-2 font-semibold text-gold-foreground shadow-gold transition-transform hover:scale-[1.03]"
@@ -56,6 +59,7 @@ function Index() {
               Verify now
             </a>
           </div>
+
         </nav>
 
         <div className="relative overflow-hidden">
