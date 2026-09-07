@@ -99,19 +99,22 @@ export const createCertificate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
   .handler(async ({ context, data }): Promise<ManagedCertificate> => {
-    const { data: row, error } = await context.supabase
-      .from("certificates")
-      .insert({
-        certificate_number: data.certificateNumber.toUpperCase(),
-        holder_name: data.holderName,
-        certification_title: data.certificationTitle,
-        issue_date: data.issueDate,
-        expiry_date: data.expiryDate ? data.expiryDate : null,
-        grade: data.grade ? data.grade : null,
-        status: data.status,
-      })
-      .select(COLUMNS)
-      .single();
+    const { data: row, error } = await withClockSkewRetry(async () =>
+      context.supabase
+        .from("certificates")
+        .insert({
+          certificate_number: data.certificateNumber.toUpperCase(),
+          holder_name: data.holderName,
+          certification_title: data.certificationTitle,
+          issue_date: data.issueDate,
+          expiry_date: data.expiryDate ? data.expiryDate : null,
+          grade: data.grade ? data.grade : null,
+          status: data.status,
+        })
+        .select(COLUMNS)
+        .single(),
+    );
+
 
     if (error) {
       if (error.code === "23505" || error.code === "23514" || error.message.includes("duplicate")) {
