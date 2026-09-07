@@ -25,6 +25,21 @@ export type ManagedCertificate = {
 const COLUMNS =
   "id, certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, created_at";
 
+// The auth server and the data API can drift by a second or two, which makes a
+// freshly minted token look like it was "issued at future". Retry briefly
+// instead of throwing the user back to the sign-in screen.
+const isClockSkew = (message: string) => /issued at future|jwt.*(future|not valid yet)/i.test(message);
+
+async function withClockSkewRetry<T>(run: () => Promise<{ data: T; error: { message: string } | null }>) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const result = await run();
+    if (!result.error || !isClockSkew(result.error.message)) return result;
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+  }
+  return run();
+}
+
+
 export const getStaffAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StaffAccess> => {
