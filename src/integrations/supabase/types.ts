@@ -14,45 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      certificates: {
-        Row: {
-          certificate_number: string
-          certification_title: string
-          created_at: string
-          expiry_date: string | null
-          grade: string | null
-          holder_name: string
-          id: string
-          issue_date: string
-          issuing_authority: string
-          status: string
-        }
-        Insert: {
-          certificate_number: string
-          certification_title: string
-          created_at?: string
-          expiry_date?: string | null
-          grade?: string | null
-          holder_name: string
-          id?: string
-          issue_date: string
-          issuing_authority?: string
-          status?: string
-        }
-        Update: {
-          certificate_number?: string
-          certification_title?: string
-          created_at?: string
-          expiry_date?: string | null
-          grade?: string | null
-          holder_name?: string
-          id?: string
-          issue_date?: string
-          issuing_authority?: string
-          status?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
