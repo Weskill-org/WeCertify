@@ -30,7 +30,9 @@ const COLUMNS =
 // instead of throwing the user back to the sign-in screen.
 const isClockSkew = (message: string) => /issued at future|jwt.*(future|not valid yet)/i.test(message);
 
-async function withClockSkewRetry<T>(run: () => Promise<{ data: T; error: { message: string } | null }>) {
+async function withClockSkewRetry<R extends { error: { message: string } | null }>(
+  run: () => Promise<R>,
+): Promise<R> {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const result = await run();
     if (!result.error || !isClockSkew(result.error.message)) return result;
@@ -38,6 +40,7 @@ async function withClockSkewRetry<T>(run: () => Promise<{ data: T; error: { mess
   }
   return run();
 }
+
 
 
 export const getStaffAccess = createServerFn({ method: "GET" })
