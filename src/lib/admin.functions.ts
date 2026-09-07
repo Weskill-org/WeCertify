@@ -43,10 +43,9 @@ async function withClockSkewRetry<T>(run: () => Promise<{ data: T; error: { mess
 export const getStaffAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StaffAccess> => {
-    const { data, error } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId);
+    const { data, error } = await withClockSkewRetry(async () =>
+      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
+    );
 
     if (error) throw new Error(error.message);
 
@@ -61,15 +60,18 @@ export const getStaffAccess = createServerFn({ method: "GET" })
 export const listCertificates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ManagedCertificate[]> => {
-    const { data, error } = await context.supabase
-      .from("certificates")
-      .select(COLUMNS)
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const { data, error } = await withClockSkewRetry(async () =>
+      context.supabase
+        .from("certificates")
+        .select(COLUMNS)
+        .order("created_at", { ascending: false })
+        .limit(200),
+    );
 
     if (error) throw new Error(error.message);
     return (data ?? []) as ManagedCertificate[];
   });
+
 
 const createSchema = z.object({
   certificateNumber: z
