@@ -138,10 +138,10 @@ export const setCertificateStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => statusSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("certificates")
-      .update({ status: data.status })
-      .eq("id", data.id);
+    const { error } = await withClockSkewRetry(async () =>
+      context.supabase.from("certificates").update({ status: data.status }).eq("id", data.id),
+    );
+
 
     if (error) {
       if (error.code === "42501") throw new Error("Only administrators can change a certificate.");
