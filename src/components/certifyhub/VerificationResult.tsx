@@ -1,6 +1,7 @@
 import { BadgeCheck, CalendarClock, FileSearch, ShieldAlert, ShieldX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
 import { cn } from "@/lib/utils";
 import type { CertificateRecord, VerificationResult } from "@/lib/certificates.functions";
 
