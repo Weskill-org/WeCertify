@@ -100,6 +100,8 @@ const createSchema = z.object({
     .or(z.literal("")),
   grade: z.string().trim().max(40).optional().or(z.literal("")),
   status: z.enum(["active", "expired", "revoked"]).default("active"),
+  templateId: z.string().uuid().optional().or(z.literal("")),
+  templateData: z.record(z.string(), z.string().max(500)).default({}),
 });
 
 export const createCertificate = createServerFn({ method: "POST" })
@@ -117,10 +119,13 @@ export const createCertificate = createServerFn({ method: "POST" })
           expiry_date: data.expiryDate ? data.expiryDate : null,
           grade: data.grade ? data.grade : null,
           status: data.status,
+          template_id: data.templateId ? data.templateId : null,
+          template_data: data.templateData,
         })
         .select(COLUMNS)
         .single(),
     );
+
 
 
     if (error) {
