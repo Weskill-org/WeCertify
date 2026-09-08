@@ -85,9 +85,20 @@ export const verifyCertificate = createServerFn({ method: "POST" })
       issuing_authority: row.issuing_authority,
       grade: row.grade,
       rendered_html: template
-        ? renderTemplate(template.html, { ...row, ...(row.template_data ?? {}) })
+        ? renderTemplate(template.html, {
+            certificate_number: row.certificate_number,
+            holder_name: row.holder_name,
+            certification_title: row.certification_title,
+            issue_date: row.issue_date,
+            expiry_date: row.expiry_date,
+            status: row.status,
+            issuing_authority: row.issuing_authority,
+            grade: row.grade,
+            ...(row.template_data ?? {}),
+          })
         : null,
     };
+
 
 
     if (certificate.status === "revoked") return { outcome: "revoked", certificate };
