@@ -8,13 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/certifyhub/Brand";
+import { TemplateManager } from "@/components/certifyhub/TemplateManager";
+import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
+import { renderTemplate } from "@/lib/template";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createCertificate,
+  deleteTemplate,
   getStaffAccess,
   listCertificates,
+  listTemplates,
+  saveTemplate,
   setCertificateStatus,
 } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
