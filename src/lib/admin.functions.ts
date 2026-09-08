@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { CertificateTemplate, TemplateVariable } from "@/lib/template";
 
 export type StaffAccess = {
   email: string | null;
@@ -20,10 +21,16 @@ export type ManagedCertificate = {
   issuing_authority: string;
   grade: string | null;
   created_at: string;
+  template_id: string | null;
+  template_data: Record<string, string>;
 };
 
 const COLUMNS =
-  "id, certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, created_at";
+  "id, certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, created_at, template_id, template_data";
+
+const TEMPLATE_COLUMNS =
+  "id, name, description, html, variables, is_default, created_at, updated_at";
+
 
 // The auth server and the data API can drift by a second or two, which makes a
 // freshly minted token look like it was "issued at future". Retry briefly
@@ -93,6 +100,8 @@ const createSchema = z.object({
     .or(z.literal("")),
   grade: z.string().trim().max(40).optional().or(z.literal("")),
   status: z.enum(["active", "expired", "revoked"]).default("active"),
+  templateId: z.string().uuid().optional().or(z.literal("")),
+  templateData: z.record(z.string(), z.string().max(500)).default({}),
 });
 
 export const createCertificate = createServerFn({ method: "POST" })
@@ -110,10 +119,13 @@ export const createCertificate = createServerFn({ method: "POST" })
           expiry_date: data.expiryDate ? data.expiryDate : null,
           grade: data.grade ? data.grade : null,
           status: data.status,
+          template_id: data.templateId ? data.templateId : null,
+          template_data: data.templateData,
         })
         .select(COLUMNS)
         .single(),
     );
+
 
 
     if (error) {
@@ -149,3 +161,112 @@ export const setCertificateStatus = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+const variableSchema = z.object({
+  key: z
+    .string()
+    .trim()
+    .min(1)
+    .max(40)
+    .regex(/^[a-zA-Z0-9_]+$/, "Variable names use letters, numbers and underscores"),
+  label: z.string().trim().min(1).max(80),
+  defaultValue: z.string().max(200).optional().or(z.literal("")),
+});
+
+const templateSchema = z.object({
+  id: z.string().uuid().optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(300).optional().or(z.literal("")),
+  html: z.string().min(20).max(50000),
+  variables: z.array(variableSchema).max(30).default([]),
+  isDefault: z.boolean().default(false),
+});
+
+export const listTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CertificateTemplate[]> => {
+    const { data, error } = await withClockSkewRetry(async () =>
+      context.supabase
+        .from("certificate_templates")
+        .select(TEMPLATE_COLUMNS)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(100),
+    );
+
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => ({
+      ...row,
+      variables: (Array.isArray(row.variables) ? row.variables : []) as TemplateVariable[],
+    })) as CertificateTemplate[];
+  });
+
+export const saveTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => templateSchema.parse(data))
+  .handler(async ({ context, data }): Promise<CertificateTemplate> => {
+    const payload = {
+      name: data.name,
+      description: data.description ? data.description : null,
+      html: data.html,
+      variables: data.variables.map((v) => ({
+        key: v.key,
+        label: v.label,
+        defaultValue: v.defaultValue ?? "",
+      })),
+      is_default: data.isDefault,
+    };
+
+    const { data: row, error } = await withClockSkewRetry(async () =>
+      data.id
+        ? context.supabase
+            .from("certificate_templates")
+            .update(payload)
+            .eq("id", data.id)
+            .select(TEMPLATE_COLUMNS)
+            .single()
+        : context.supabase
+            .from("certificate_templates")
+            .insert({ ...payload, created_by: context.userId })
+            .select(TEMPLATE_COLUMNS)
+            .single(),
+    );
+
+    if (error) {
+      if (error.code === "42501") {
+        throw new Error("Your account is not allowed to change this template.");
+      }
+      throw new Error(error.message);
+    }
+
+    // Only one template can be the default.
+    if (data.isDefault && row) {
+      await withClockSkewRetry(async () =>
+        context.supabase
+          .from("certificate_templates")
+          .update({ is_default: false })
+          .neq("id", row.id),
+      );
+    }
+
+    return {
+      ...row,
+      variables: (Array.isArray(row.variables) ? row.variables : []) as TemplateVariable[],
+    } as CertificateTemplate;
+  });
+
+export const deleteTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { error } = await withClockSkewRetry(async () =>
+      context.supabase.from("certificate_templates").delete().eq("id", data.id),
+    );
+
+    if (error) {
+      if (error.code === "42501") throw new Error("Only administrators can delete a template.");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+

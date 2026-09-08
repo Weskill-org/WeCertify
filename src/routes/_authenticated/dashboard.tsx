@@ -8,13 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/certifyhub/Brand";
+import { TemplateManager } from "@/components/certifyhub/TemplateManager";
+import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
+import { renderTemplate } from "@/lib/template";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createCertificate,
+  deleteTemplate,
   getStaffAccess,
   listCertificates,
+  listTemplates,
+  saveTemplate,
   setCertificateStatus,
 } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -58,6 +65,7 @@ const EMPTY_FORM = {
   issueDate: "",
   expiryDate: "",
   grade: "",
+  templateId: "",
 };
 
 function Dashboard() {
@@ -67,19 +75,50 @@ function Dashboard() {
   const fetchCertificates = useServerFn(listCertificates);
   const addCertificate = useServerFn(createCertificate);
   const changeStatus = useServerFn(setCertificateStatus);
+  const fetchTemplates = useServerFn(listTemplates);
+  const storeTemplate = useServerFn(saveTemplate);
+  const removeTemplate = useServerFn(deleteTemplate);
 
   const access = useQuery({ queryKey: ["staff-access"], queryFn: () => fetchAccess({}) });
   const certificates = useQuery({
     queryKey: ["managed-certificates"],
     queryFn: () => fetchCertificates({}),
   });
+  const templates = useQuery({
+    queryKey: ["certificate-templates"],
+    queryFn: () => fetchTemplates({}),
+  });
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   const canIssue = Boolean(access.data?.isAdmin || access.data?.isIssuer);
   const isAdmin = Boolean(access.data?.isAdmin);
+
+  const templateList = useMemo(() => templates.data ?? [], [templates.data]);
+  const selectedTemplate = useMemo(
+    () =>
+      templateList.find((t) => t.id === form.templateId) ??
+      (form.templateId ? undefined : templateList.find((t) => t.is_default)),
+    [templateList, form.templateId],
+  );
+
+  const issuePreview = useMemo(() => {
+    if (!selectedTemplate) return null;
+    return renderTemplate(selectedTemplate.html, {
+      certificate_number: form.certificateNumber || "WSK-0000-000000",
+      holder_name: form.holderName || "Holder name",
+      certification_title: form.certificationTitle || "Certification title",
+      issue_date: form.issueDate || "—",
+      expiry_date: form.expiryDate,
+      grade: form.grade,
+      issuing_authority: "Weskill Certification Authority",
+      status: "active",
+      ...variableValues,
+    });
+  }, [selectedTemplate, form, variableValues]);
 
   useEffect(() => {
     if (!message) return;
@@ -108,9 +147,12 @@ function Dashboard() {
           expiryDate: form.expiryDate,
           grade: form.grade,
           status: "active" as const,
+          templateId: selectedTemplate?.id ?? "",
+          templateData: variableValues,
         },
       });
       setForm(EMPTY_FORM);
+      setVariableValues({});
       setMessage({ kind: "ok", text: "Certificate issued and now verifiable." });
       await queryClient.invalidateQueries({ queryKey: ["managed-certificates"] });
     } catch (error) {
@@ -122,6 +164,41 @@ function Dashboard() {
       setSaving(false);
     }
   }
+
+  async function handleSaveTemplate(draft: {
+    id: string;
+    name: string;
+    description: string;
+    html: string;
+    variables: { key: string; label: string; defaultValue?: string }[];
+    isDefault: boolean;
+  }) {
+    setMessage(null);
+    try {
+      await storeTemplate({ data: draft });
+      setMessage({ kind: "ok", text: "Template saved." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not save that template.",
+      });
+      throw error;
+    }
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    try {
+      await removeTemplate({ data: { id } });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not delete that template.",
+      });
+    }
+  }
+
 
   async function handleStatus(id: string, status: "active" | "revoked") {
     try {
@@ -263,6 +340,63 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="templateId">Certificate template</Label>
+                <select
+                  id="templateId"
+                  value={selectedTemplate?.id ?? ""}
+                  onChange={(e) => {
+                    const next = templateList.find((t) => t.id === e.target.value);
+                    setForm({ ...form, templateId: e.target.value });
+                    const defaults: Record<string, string> = {};
+                    for (const variable of next?.variables ?? []) {
+                      defaults[variable.key] = variable.defaultValue ?? "";
+                    }
+                    setVariableValues(defaults);
+                  }}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">No template (data only)</option>
+                  {templateList.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                      {template.is_default ? " (default)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {selectedTemplate?.description && (
+                  <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
+                )}
+              </div>
+
+              {(selectedTemplate?.variables ?? []).map((variable) => (
+                <div className="space-y-2" key={variable.key}>
+                  <Label htmlFor={`var-${variable.key}`}>{variable.label}</Label>
+                  <Input
+                    id={`var-${variable.key}`}
+                    value={variableValues[variable.key] ?? ""}
+                    onChange={(e) =>
+                      setVariableValues({ ...variableValues, [variable.key]: e.target.value })
+                    }
+                    placeholder={variable.defaultValue || variable.key}
+                    className="h-11"
+                  />
+                </div>
+              ))}
+
+              {issuePreview && (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Template preview
+                  </p>
+                  <TemplatePreview
+                    html={issuePreview}
+                    title="Certificate template preview"
+                    className="h-[420px] w-full rounded-2xl border border-border bg-white"
+                  />
+                </div>
+              )}
+
               <div className="flex items-end">
                 <Button type="submit" size="lg" className="h-11 w-full" disabled={saving}>
                   {saving ? (
@@ -276,6 +410,19 @@ function Dashboard() {
             </form>
           </section>
         )}
+
+        {canIssue && (
+          <TemplateManager
+            templates={templateList}
+            isLoading={templates.isLoading}
+            canEdit={canIssue}
+            canDelete={isAdmin}
+            onSave={handleSaveTemplate}
+            onDelete={handleDeleteTemplate}
+          />
+        )}
+
+
 
         <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-lift sm:p-8">
           <h2 className="font-display text-xl font-semibold text-foreground">Registry</h2>

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificate_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          html: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           certificate_number: string
@@ -26,6 +62,8 @@ export type Database = {
           issue_date: string
           issuing_authority: string
           status: string
+          template_data: Json
+          template_id: string | null
         }
         Insert: {
           certificate_number: string
@@ -38,6 +76,8 @@ export type Database = {
           issue_date: string
           issuing_authority?: string
           status?: string
+          template_data?: Json
+          template_id?: string | null
         }
         Update: {
           certificate_number?: string
@@ -50,8 +90,18 @@ export type Database = {
           issue_date?: string
           issuing_authority?: string
           status?: string
+          template_data?: Json
+          template_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "certificates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

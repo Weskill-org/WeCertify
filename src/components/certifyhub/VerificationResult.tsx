@@ -1,6 +1,7 @@
 import { BadgeCheck, CalendarClock, FileSearch, ShieldAlert, ShieldX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
 import { cn } from "@/lib/utils";
 import type { CertificateRecord, VerificationResult } from "@/lib/certificates.functions";
 
@@ -116,6 +117,15 @@ function CertificateCard({
           {certificate.grade && <DetailRow label="Result" value={certificate.grade} />}
           <DetailRow label="Issuing authority" value={certificate.issuing_authority} />
         </dl>
+
+        {certificate.rendered_html && (
+          <TemplatePreview
+            html={certificate.rendered_html}
+            title={`Certificate ${certificate.certificate_number}`}
+            className="h-[420px] w-full rounded-2xl border border-border bg-white"
+          />
+        )}
+
       </div>
     </div>
   );
