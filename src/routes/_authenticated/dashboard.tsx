@@ -340,6 +340,63 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="templateId">Certificate template</Label>
+                <select
+                  id="templateId"
+                  value={selectedTemplate?.id ?? ""}
+                  onChange={(e) => {
+                    const next = templateList.find((t) => t.id === e.target.value);
+                    setForm({ ...form, templateId: e.target.value });
+                    const defaults: Record<string, string> = {};
+                    for (const variable of next?.variables ?? []) {
+                      defaults[variable.key] = variable.defaultValue ?? "";
+                    }
+                    setVariableValues(defaults);
+                  }}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">No template (data only)</option>
+                  {templateList.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                      {template.is_default ? " (default)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {selectedTemplate?.description && (
+                  <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
+                )}
+              </div>
+
+              {(selectedTemplate?.variables ?? []).map((variable) => (
+                <div className="space-y-2" key={variable.key}>
+                  <Label htmlFor={`var-${variable.key}`}>{variable.label}</Label>
+                  <Input
+                    id={`var-${variable.key}`}
+                    value={variableValues[variable.key] ?? ""}
+                    onChange={(e) =>
+                      setVariableValues({ ...variableValues, [variable.key]: e.target.value })
+                    }
+                    placeholder={variable.defaultValue || variable.key}
+                    className="h-11"
+                  />
+                </div>
+              ))}
+
+              {issuePreview && (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Template preview
+                  </p>
+                  <TemplatePreview
+                    html={issuePreview}
+                    title="Certificate template preview"
+                    className="h-[420px] w-full rounded-2xl border border-border bg-white"
+                  />
+                </div>
+              )}
+
               <div className="flex items-end">
                 <Button type="submit" size="lg" className="h-11 w-full" disabled={saving}>
                   {saving ? (
