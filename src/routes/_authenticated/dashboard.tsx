@@ -65,6 +65,7 @@ const EMPTY_FORM = {
   issueDate: "",
   expiryDate: "",
   grade: "",
+  templateId: "",
 };
 
 function Dashboard() {
@@ -74,19 +75,50 @@ function Dashboard() {
   const fetchCertificates = useServerFn(listCertificates);
   const addCertificate = useServerFn(createCertificate);
   const changeStatus = useServerFn(setCertificateStatus);
+  const fetchTemplates = useServerFn(listTemplates);
+  const storeTemplate = useServerFn(saveTemplate);
+  const removeTemplate = useServerFn(deleteTemplate);
 
   const access = useQuery({ queryKey: ["staff-access"], queryFn: () => fetchAccess({}) });
   const certificates = useQuery({
     queryKey: ["managed-certificates"],
     queryFn: () => fetchCertificates({}),
   });
+  const templates = useQuery({
+    queryKey: ["certificate-templates"],
+    queryFn: () => fetchTemplates({}),
+  });
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   const canIssue = Boolean(access.data?.isAdmin || access.data?.isIssuer);
   const isAdmin = Boolean(access.data?.isAdmin);
+
+  const templateList = useMemo(() => templates.data ?? [], [templates.data]);
+  const selectedTemplate = useMemo(
+    () =>
+      templateList.find((t) => t.id === form.templateId) ??
+      (form.templateId ? undefined : templateList.find((t) => t.is_default)),
+    [templateList, form.templateId],
+  );
+
+  const issuePreview = useMemo(() => {
+    if (!selectedTemplate) return null;
+    return renderTemplate(selectedTemplate.html, {
+      certificate_number: form.certificateNumber || "WSK-0000-000000",
+      holder_name: form.holderName || "Holder name",
+      certification_title: form.certificationTitle || "Certification title",
+      issue_date: form.issueDate || "—",
+      expiry_date: form.expiryDate,
+      grade: form.grade,
+      issuing_authority: "Weskill Certification Authority",
+      status: "active",
+      ...variableValues,
+    });
+  }, [selectedTemplate, form, variableValues]);
 
   useEffect(() => {
     if (!message) return;
@@ -115,9 +147,12 @@ function Dashboard() {
           expiryDate: form.expiryDate,
           grade: form.grade,
           status: "active" as const,
+          templateId: selectedTemplate?.id ?? "",
+          templateData: variableValues,
         },
       });
       setForm(EMPTY_FORM);
+      setVariableValues({});
       setMessage({ kind: "ok", text: "Certificate issued and now verifiable." });
       await queryClient.invalidateQueries({ queryKey: ["managed-certificates"] });
     } catch (error) {
@@ -129,6 +164,41 @@ function Dashboard() {
       setSaving(false);
     }
   }
+
+  async function handleSaveTemplate(draft: {
+    id: string;
+    name: string;
+    description: string;
+    html: string;
+    variables: { key: string; label: string; defaultValue?: string }[];
+    isDefault: boolean;
+  }) {
+    setMessage(null);
+    try {
+      await storeTemplate({ data: draft });
+      setMessage({ kind: "ok", text: "Template saved." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not save that template.",
+      });
+      throw error;
+    }
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    try {
+      await removeTemplate({ data: { id } });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not delete that template.",
+      });
+    }
+  }
+
 
   async function handleStatus(id: string, status: "active" | "revoked") {
     try {
