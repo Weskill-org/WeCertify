@@ -411,6 +411,19 @@ function Dashboard() {
           </section>
         )}
 
+        {canIssue && (
+          <TemplateManager
+            templates={templateList}
+            isLoading={templates.isLoading}
+            canEdit={canIssue}
+            canDelete={isAdmin}
+            onSave={handleSaveTemplate}
+            onDelete={handleDeleteTemplate}
+          />
+        )}
+
+
+
         <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-lift sm:p-8">
           <h2 className="font-display text-xl font-semibold text-foreground">Registry</h2>
           {certificates.isLoading ? (
