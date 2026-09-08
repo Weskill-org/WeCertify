@@ -56,15 +56,39 @@ export const verifyCertificate = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("certificates")
       .select(
-        "certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade",
+        "certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, template_data, certificate_templates(html)",
       )
       .eq("certificate_number", normalized)
       .limit(1);
 
     if (error) throw new Error(error.message);
 
-    const certificate = rows?.[0] as CertificateRecord | undefined;
-    if (!certificate) return { outcome: "not_found", query: normalized };
+    const row = rows?.[0] as
+      | (CertificateRecord & {
+          template_data: Record<string, string> | null;
+          certificate_templates: { html: string } | { html: string }[] | null;
+        })
+      | undefined;
+    if (!row) return { outcome: "not_found", query: normalized };
+
+    const template = Array.isArray(row.certificate_templates)
+      ? row.certificate_templates[0]
+      : row.certificate_templates;
+
+    const certificate: CertificateRecord = {
+      certificate_number: row.certificate_number,
+      holder_name: row.holder_name,
+      certification_title: row.certification_title,
+      issue_date: row.issue_date,
+      expiry_date: row.expiry_date,
+      status: row.status,
+      issuing_authority: row.issuing_authority,
+      grade: row.grade,
+      rendered_html: template
+        ? renderTemplate(template.html, { ...row, ...(row.template_data ?? {}) })
+        : null,
+    };
+
 
     if (certificate.status === "revoked") return { outcome: "revoked", certificate };
     if (certificate.status === "expired" || isPastDate(certificate.expiry_date)) {
