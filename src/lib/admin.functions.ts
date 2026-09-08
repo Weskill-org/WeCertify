@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { CertificateTemplate, TemplateVariable } from "@/lib/template";
 
 export type StaffAccess = {
   email: string | null;
@@ -20,10 +21,16 @@ export type ManagedCertificate = {
   issuing_authority: string;
   grade: string | null;
   created_at: string;
+  template_id: string | null;
+  template_data: Record<string, string>;
 };
 
 const COLUMNS =
-  "id, certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, created_at";
+  "id, certificate_number, holder_name, certification_title, issue_date, expiry_date, status, issuing_authority, grade, created_at, template_id, template_data";
+
+const TEMPLATE_COLUMNS =
+  "id, name, description, html, variables, is_default, created_at, updated_at";
+
 
 // The auth server and the data API can drift by a second or two, which makes a
 // freshly minted token look like it was "issued at future". Retry briefly
