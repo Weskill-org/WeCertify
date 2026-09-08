@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { renderTemplate } from "@/lib/template";
+
 export type CertificateRecord = {
   certificate_number: string;
   holder_name: string;
@@ -11,12 +13,14 @@ export type CertificateRecord = {
   status: string;
   issuing_authority: string;
   grade: string | null;
+  rendered_html?: string | null;
 };
 
 export type VerificationResult =
   | { outcome: "verified"; certificate: CertificateRecord }
   | { outcome: "expired" | "revoked"; certificate: CertificateRecord }
   | { outcome: "not_found"; query: string };
+
 
 const inputSchema = z.object({
   certificateNumber: z
