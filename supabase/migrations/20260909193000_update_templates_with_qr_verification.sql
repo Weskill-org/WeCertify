@@ -1,31 +1,7 @@
-import type { TemplateVariable } from "@/lib/template";
+-- Update certificate templates to include scannable QR codes and canonical verification links (certify.weskill.org)
 
-export type TemplatePreset = {
-  id: string;
-  name: string;
-  description: string;
-  category: "Classic" | "Modern" | "Executive" | "Tech" | "Academic";
-  badgeColor: string;
-  html: string;
-  variables: TemplateVariable[];
-};
-
-export const TEMPLATE_PRESETS: TemplatePreset[] = [
-  {
-    id: "classic-navy-gold",
-    name: "Classic Navy & Gold",
-    description:
-      "Traditional Weskill certificate layout with navy background and gold seal accent.",
-    category: "Classic",
-    badgeColor: "#c9a227",
-    variables: [
-      {
-        key: "department",
-        label: "Department / Faculty",
-        defaultValue: "School of Advanced Technologies",
-      },
-    ],
-    html: `<div style="font-family:Georgia,serif;background:#0b1b33;color:#f7f5ef;padding:52px 48px;text-align:center;border:10px solid #c9a227;border-radius:4px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;">
+UPDATE public.certificate_templates
+SET html = '<div style="font-family:Georgia,serif;background:#0b1b33;color:#f7f5ef;padding:52px 48px;text-align:center;border:10px solid #c9a227;border-radius:4px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;">
   <div style="border:1px solid rgba(201,162,39,0.3);padding:36px 32px;border-radius:2px;box-sizing:border-box;background:radial-gradient(ellipse at center, rgba(16,33,62,0.6) 0%, rgba(11,27,51,0.95) 100%);">
     <p style="letter-spacing:.3em;text-transform:uppercase;font-size:12px;color:#c9a227;margin:0 0 16px;font-weight:600;">{{issuing_authority}}</p>
     {{#department}}<p style="letter-spacing:.15em;text-transform:uppercase;font-size:11px;color:#d8c385;margin:0 0 20px;opacity:.85;">{{department}}</p>{{/department}}
@@ -48,27 +24,11 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
       <span>Cert ID: <strong>{{certificate_number}}</strong></span>
     </div>
   </div>
-</div>`,
-  },
-  {
-    id: "modern-minimalist-emerald",
-    name: "Modern Minimalist Emerald",
-    description: "Clean, crisp contemporary design with emerald borders and modern typography.",
-    category: "Modern",
-    badgeColor: "#059669",
-    variables: [
-      {
-        key: "instructor_name",
-        label: "Instructor / Lead Assessor",
-        defaultValue: "Dr. Elena Rostova",
-      },
-      {
-        key: "duration_hours",
-        label: "Program Hours",
-        defaultValue: "120 Hours",
-      },
-    ],
-    html: `<div style="font-family:'Segoe UI',Roboto,Helvetica,sans-serif;background:#ffffff;color:#1e293b;padding:48px;border:3px solid #059669;border-radius:16px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 8px #f0fdf4;position:relative;">
+</div>'
+WHERE name = 'Classic Navy & Gold';
+
+UPDATE public.certificate_templates
+SET html = '<div style="font-family:''Segoe UI'',Roboto,Helvetica,sans-serif;background:#ffffff;color:#1e293b;padding:48px;border:3px solid #059669;border-radius:16px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 8px #f0fdf4;position:relative;">
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #e2e8f0;padding-bottom:18px;">
     <div>
       <span style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#059669;display:block;margin-bottom:2px;">OFFICIAL ACCREDITATION</span>
@@ -118,28 +78,11 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
       <strong style="color:#0f172a;">{{issue_date}}</strong>
     </div>
   </div>
-</div>`,
-  },
-  {
-    id: "executive-crimson-ivory",
-    name: "Executive Crimson & Ivory",
-    description:
-      "Prestigious executive leadership credential with deep wine borders and warm ivory parchment.",
-    category: "Executive",
-    badgeColor: "#881337",
-    variables: [
-      {
-        key: "board_chair",
-        label: "Executive Director / Chair",
-        defaultValue: "Marcus Vance, MBA",
-      },
-      {
-        key: "distinction_notes",
-        label: "Distinction Notes",
-        defaultValue: "Awarded with Executive Honors",
-      },
-    ],
-    html: `<div style="font-family:'Times New Roman',Times,serif;background:#fffdfa;color:#2c1810;padding:52px 48px;border:8px double #881337;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:inset 0 0 20px rgba(136,19,55,0.05);">
+</div>'
+WHERE name = 'Modern Minimalist Emerald';
+
+UPDATE public.certificate_templates
+SET html = '<div style="font-family:''Times New Roman'',Times,serif;background:#fffdfa;color:#2c1810;padding:52px 48px;border:8px double #881337;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:inset 0 0 20px rgba(136,19,55,0.05);">
   <div style="text-align:center;border-bottom:1px solid #e7d8c9;padding-bottom:16px;">
     <div style="font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#881337;margin-bottom:4px;">EXECUTIVE BOARD OF CREDENTIALING</div>
     <div style="font-size:16px;font-weight:700;letter-spacing:0.04em;color:#4c0519;">{{issuing_authority}}</div>
@@ -173,28 +116,11 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
       <div style="font-size:11px;color:#786961;">Date of Conformance</div>
     </div>
   </div>
-</div>`,
-  },
-  {
-    id: "cyber-tech-dark",
-    name: "Cyber Tech & Engineering",
-    description:
-      "Sleek dark mode credential with neon cyan accents, monospace details, and tech badges.",
-    category: "Tech",
-    badgeColor: "#06b6d4",
-    variables: [
-      {
-        key: "track_specialization",
-        label: "Specialization Track",
-        defaultValue: "Cloud & Distributed Systems",
-      },
-      {
-        key: "skills_verified",
-        label: "Key Skills Verified",
-        defaultValue: "Architecture, Kubernetes, Security",
-      },
-    ],
-    html: `<div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#090d16;color:#e2e8f0;padding:44px;border:2px solid #06b6d4;border-radius:12px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:0 0 30px rgba(6,182,212,0.15);">
+</div>'
+WHERE name = 'Executive Crimson & Ivory';
+
+UPDATE public.certificate_templates
+SET html = '<div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#090d16;color:#e2e8f0;padding:44px;border:2px solid #06b6d4;border-radius:12px;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:0 0 30px rgba(6,182,212,0.15);">
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(6,182,212,0.25);padding-bottom:16px;">
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="width:10px;height:10px;background:#06b6d4;border-radius:50%;display:inline-block;box-shadow:0 0 8px #06b6d4;"></span>
@@ -205,7 +131,7 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
 
   <div style="text-align:center;padding:24px 0;">
     <div style="color:#06b6d4;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:8px;">[ CERTIFICATE OF PROFICIENCY ]</div>
-    <h1 style="font-size:28px;color:#f8fafc;margin:0 0 16px;font-family:'Segoe UI',system-ui,sans-serif;font-weight:700;letter-spacing:-0.02em;">{{certification_title}}</h1>
+    <h1 style="font-size:28px;color:#f8fafc;margin:0 0 16px;font-family:''Segoe UI'',system-ui,sans-serif;font-weight:700;letter-spacing:-0.02em;">{{certification_title}}</h1>
     
     <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.2);padding:14px 20px;border-radius:8px;display:inline-block;margin:0 auto 16px;min-width:320px;">
       <span style="font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;">ISSUED TO OPERATOR</span>
@@ -247,28 +173,11 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
       <strong style="color:#94a3b8;">{{issue_date}}</strong>
     </div>
   </div>
-</div>`,
-  },
-  {
-    id: "academic-distinction-royal",
-    name: "Academic Distinction / Royal Blue",
-    description:
-      "Classic collegiate honors certificate with royal blue double framing and laurel insignia.",
-    category: "Academic",
-    badgeColor: "#1d4ed8",
-    variables: [
-      {
-        key: "chancellor_name",
-        label: "Dean / Chancellor",
-        defaultValue: "Prof. Arthur Pendelton",
-      },
-      {
-        key: "academic_honors",
-        label: "Honor Status",
-        defaultValue: "Summa Cum Laude",
-      },
-    ],
-    html: `<div style="font-family:'Palatino Linotype',Book Antiqua,Palatino,serif;background:#fafaf9;color:#1e293b;padding:48px 44px;border:6px solid #1e40af;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;outline:2px solid #93c5fd;outline-offset:-12px;">
+</div>'
+WHERE name = 'Cyber Tech & Engineering';
+
+UPDATE public.certificate_templates
+SET html = '<div style="font-family:''Palatino Linotype'',Book Antiqua,Palatino,serif;background:#fafaf9;color:#1e293b;padding:48px 44px;border:6px solid #1e40af;box-sizing:border-box;min-height:480px;display:flex;flex-direction:column;justify-content:space-between;position:relative;outline:2px solid #93c5fd;outline-offset:-12px;">
   <div style="text-align:center;padding-top:6px;">
     <p style="letter-spacing:0.25em;text-transform:uppercase;font-size:11px;color:#1e40af;font-weight:bold;margin:0 0 6px;">INSTITUTIONAL CREST &amp; SEAL</p>
     <h2 style="font-size:18px;color:#0f172a;margin:0;letter-spacing:0.04em;">{{issuing_authority}}</h2>
@@ -304,10 +213,5 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
       <div style="font-size:11px;color:#64748b;">Conferment Date</div>
     </div>
   </div>
-</div>`,
-  },
-];
-
-export function getPresetById(id: string): TemplatePreset | undefined {
-  return TEMPLATE_PRESETS.find((p) => p.id === id);
-}
+</div>'
+WHERE name = 'Academic Distinction / Royal Blue';

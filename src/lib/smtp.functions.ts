@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildVerificationUrl, CANONICAL_VERIFY_BASE_URL } from "@/lib/qr";
 
 export type SmtpPublicConfig = {
   isConfigured: boolean;
@@ -31,15 +32,28 @@ function getAppOrigin(): string {
     const req = getRequest();
     if (req?.url) {
       const url = new URL(req.url);
-      return url.origin;
+      if (
+        !url.origin.includes("localhost") &&
+        !url.origin.includes("127.0.0.1") &&
+        !url.origin.includes("lovable")
+      ) {
+        return url.origin;
+      }
     }
     const host = req?.headers?.get("host");
     const proto = req?.headers?.get("x-forwarded-proto") ?? "https";
-    if (host) return `${proto}://${host}`;
+    if (
+      host &&
+      !host.includes("localhost") &&
+      !host.includes("127.0.0.1") &&
+      !host.includes("lovable")
+    ) {
+      return `${proto}://${host}`;
+    }
   } catch {
     // fallback
   }
-  return "https://wecertify.weskill.org";
+  return CANONICAL_VERIFY_BASE_URL;
 }
 
 export function replacePlaceholders(
@@ -338,7 +352,7 @@ export const sendCertificateEmail = createServerFn({ method: "POST" })
     }
 
     const origin = getAppOrigin();
-    const verificationUrl = `${origin}/?id=${encodeURIComponent(cert.certificate_number)}`;
+    const verificationUrl = buildVerificationUrl(cert.certificate_number, origin);
 
     const templateData: Record<string, string | null | undefined> = {
       holder_name: cert.holder_name,

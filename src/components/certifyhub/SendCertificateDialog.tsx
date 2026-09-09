@@ -28,6 +28,7 @@ import {
   sendCertificateEmail,
   type SmtpPublicConfig,
 } from "@/lib/smtp.functions";
+import { buildVerificationUrl } from "@/lib/qr";
 import type { ManagedCertificate } from "@/lib/admin.functions";
 
 interface SendCertificateDialogProps {
@@ -66,7 +67,7 @@ export function SendCertificateDialog({
   const certData = useMemo(() => {
     if (!certificate) return null;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const verificationUrl = `${origin}/?id=${encodeURIComponent(certificate.certificate_number)}`;
+    const verificationUrl = buildVerificationUrl(certificate.certificate_number, origin);
 
     return {
       holder_name: certificate.holder_name,

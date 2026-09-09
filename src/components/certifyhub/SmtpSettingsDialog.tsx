@@ -55,7 +55,7 @@ const TEMPLATE_VARIABLES = [
   {
     key: "{{verification_url}}",
     label: "Verification Link",
-    sample: "https://wecertify.weskill.org/?id=WE-2026-000456",
+    sample: "https://certify.weskill.org/?id=WE-2026-000456",
   },
   { key: "{{issuing_authority}}", label: "Authority", sample: "Weskill Certification Authority" },
 ];
@@ -207,7 +207,7 @@ export function SmtpSettingsDialog({ open, onOpenChange, onSaved }: SmtpSettings
     certificate_number: "WE-2026-000456",
     issue_date: "2026-03-14",
     grade: "Distinction",
-    verification_url: "https://wecertify.weskill.org/?id=WE-2026-000456",
+    verification_url: "https://certify.weskill.org/?id=WE-2026-000456",
     issuing_authority: fromName || "Weskill Certification Authority",
   };
 

@@ -15,6 +15,14 @@ export type StaffAccess = {
   isIssuer: boolean;
 };
 
+export type ManagedIssuer = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: "admin" | "issuer" | "user";
+  createdAt: string;
+};
+
 export type ManagedCertificate = {
   id: string;
   certificate_number: string;
@@ -446,3 +454,109 @@ export const unarchiveTemplate = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const listIssuers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ManagedIssuer[]> => {
+    const { data, error } = await withClockSkewRetry(async () =>
+      context.supabase.rpc("admin_list_users"),
+    );
+
+    if (error) {
+      if (error.code === "42501" || error.message.includes("Access denied")) {
+        throw new Error("Only administrators can view staff accounts.");
+      }
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row: { id: string; email: string; full_name?: string | null; role: "admin" | "issuer" | "user"; created_at: string }) => ({
+      id: row.id,
+      email: row.email,
+      fullName: row.full_name || "",
+      role: row.role,
+      createdAt: row.created_at,
+    }));
+  });
+
+const createIssuerSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().trim().max(100).optional().or(z.literal("")),
+});
+
+export const createIssuer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => createIssuerSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const { data: userId, error } = await withClockSkewRetry(async () =>
+      context.supabase.rpc("admin_create_issuer", {
+        _email: data.email,
+        _password: data.password,
+        _full_name: data.fullName ?? "",
+      }),
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { id: userId };
+  });
+
+const updateIssuerSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().trim().email("Enter a valid email address"),
+  fullName: z.string().trim().max(100).optional().or(z.literal("")),
+  newPassword: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .optional()
+    .or(z.literal("")),
+  role: z.enum(["admin", "issuer"]).optional(),
+});
+
+export const updateIssuer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateIssuerSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const { error } = await withClockSkewRetry(async () =>
+      context.supabase.rpc("admin_update_issuer", {
+        _user_id: data.id,
+        _email: data.email,
+        _full_name: data.fullName ?? "",
+        _new_password:
+          data.newPassword && data.newPassword.trim().length > 0
+            ? data.newPassword.trim()
+            : undefined,
+        _role: data.role ?? undefined,
+      }),
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
+const deleteIssuerSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const deleteIssuer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => deleteIssuerSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const { error } = await withClockSkewRetry(async () =>
+      context.supabase.rpc("admin_delete_issuer", {
+        _user_id: data.id,
+      }),
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+

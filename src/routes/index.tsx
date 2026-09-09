@@ -30,8 +30,7 @@ const TRUST_SIGNALS = [
 ];
 
 // Stable, SSR-safe absolute URL so the rendered QR matches between server and client.
-const SAMPLE_QR_VALUE =
-  "https://project--3a3f6455-7df7-477f-abc6-f7788111b229.lovable.app/?id=WE-2025-000123";
+const SAMPLE_QR_VALUE = "https://certify.weskill.org/?id=WE-2025-000123";
 
 function Index() {
   return (

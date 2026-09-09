@@ -183,6 +183,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_issuer: {
+        Args: { _email: string; _full_name?: string | undefined; _password: string }
+        Returns: string
+      }
+      admin_delete_issuer: { Args: { _user_id: string }; Returns: boolean }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
+      admin_update_issuer: {
+        Args: {
+          _email: string
+          _full_name?: string | undefined
+          _new_password?: string | undefined
+          _role?: Database["public"]["Enums"]["app_role"] | undefined
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

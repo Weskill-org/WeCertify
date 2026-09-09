@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
 import { TemplateSelector } from "@/components/certifyhub/TemplateSelector";
 import { SmtpSettingsDialog } from "@/components/certifyhub/SmtpSettingsDialog";
 import { SendCertificateDialog } from "@/components/certifyhub/SendCertificateDialog";
+import { IssuerManagerDialog } from "@/components/certifyhub/IssuerManagerDialog";
 import { renderTemplate } from "@/lib/template";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -132,6 +134,7 @@ function Dashboard() {
 
   // SMTP & Certificate Email dialog states
   const [smtpDialogOpen, setSmtpDialogOpen] = useState(false);
+  const [issuersDialogOpen, setIssuersDialogOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedCertForEmail, setSelectedCertForEmail] = useState<ManagedCertificate | null>(null);
   const [isPostCreation, setIsPostCreation] = useState(false);
@@ -396,15 +399,26 @@ function Dashboard() {
               {isAdmin ? "Administrator" : canIssue ? "Issuer" : "No issuing access"}
             </span>
             {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSmtpDialogOpen(true)}
-                className="gap-1.5 border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 hover:text-gold shadow-sm"
-              >
-                <Mail className="size-3.5" />
-                SMTP Settings
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIssuersDialogOpen(true)}
+                  className="gap-1.5 border-emerald/40 bg-emerald/10 text-emerald hover:bg-emerald/25 hover:text-emerald shadow-sm"
+                >
+                  <Users className="size-3.5" />
+                  Manage Issuers
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSmtpDialogOpen(true)}
+                  className="gap-1.5 border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 hover:text-gold shadow-sm"
+                >
+                  <Mail className="size-3.5" />
+                  SMTP Settings
+                </Button>
+              </>
             )}
             <Button variant="secondary" size="sm" onClick={() => void handleSignOut()}>
               <LogOut className="size-4" />
@@ -888,6 +902,13 @@ function Dashboard() {
         onSaved={() => {
           setMessage({ kind: "ok", text: "SMTP configuration updated successfully." });
         }}
+      />
+
+      {/* Admin Issuer Accounts Dialog */}
+      <IssuerManagerDialog
+        open={issuersDialogOpen}
+        onOpenChange={setIssuersDialogOpen}
+        currentUserEmail={access.data?.email}
       />
 
       {/* Send Certificate Dialog (Triggered post-issuance or from registry row) */}
