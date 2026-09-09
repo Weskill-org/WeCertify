@@ -36,7 +36,8 @@ export function VerificationPanel() {
         if (elapsed < 700) await new Promise((r) => setTimeout(r, 700 - elapsed));
         setResult(data);
         setPhase("done");
-      } catch {
+      } catch (err) {
+        console.error("Verification failed:", err);
         setError("Verification is temporarily unavailable. Please try again in a moment.");
         setPhase("idle");
       }

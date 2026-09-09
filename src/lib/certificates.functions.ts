@@ -38,12 +38,21 @@ function isPastDate(value: string | null): boolean {
   return new Date(`${value}T00:00:00Z`).getTime() < today.getTime();
 }
 
+const DEFAULT_SUPABASE_URL = "https://eayqsqwtxwftnqbkuyip.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVheXFzcXd0eHdmdG5xYmt1eWlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3OTU0MjEsImV4cCI6MjEwNDM3MTQyMX0.Gd5tGq-qY8sauNYNXgfNCsnR2IBRRugiVVlbfOdUPas";
+
 export const verifyCertificate = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<VerificationResult> => {
-    const url = process.env["VITE_SUPABASE_URL"] ?? process.env["SUPABASE_URL"];
+    const url =
+      process.env["VITE_SUPABASE_URL"] ??
+      process.env["SUPABASE_URL"] ??
+      DEFAULT_SUPABASE_URL;
     const key =
-      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"];
+      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+      process.env["SUPABASE_PUBLISHABLE_KEY"] ??
+      DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
     if (!url || !key) throw new Error("Verification service is not configured");
 
