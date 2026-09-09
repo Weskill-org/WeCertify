@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { BrandLockup } from "@/components/certifyhub/Brand";
 import { supabase } from "@/integrations/supabase/client";
 
-const TITLE = "Staff sign in — CertifyHub by Weskill";
+const TITLE = "Staff sign in — WeCertify by Weskill";
 const DESCRIPTION =
-  "Sign in to CertifyHub to issue and manage Weskill certificates. Verifying a certificate never requires an account.";
+  "Sign in to WeCertify to issue and manage Weskill certificates. Verifying a certificate never requires an account.";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

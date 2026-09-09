@@ -92,7 +92,7 @@ export function WhyTrust({ sampleQrValue }: { sampleQrValue: string }) {
       <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Why trust CertifyHub
+            Why trust WeCertify
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-balance-tight sm:text-4xl">
             The credentialing authority behind every Weskill certificate
@@ -133,7 +133,7 @@ export function WhyTrust({ sampleQrValue }: { sampleQrValue: string }) {
           </div>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
             This is a live QR code for sample certificate{" "}
-            <span className="font-mono font-semibold text-foreground">WSK-2025-000123</span>. Open
+            <span className="font-mono font-semibold text-foreground">WE-2025-000123</span>. Open
             the scanner above on your phone and point it at this screen to see the full verification
             flow end to end.
           </p>
@@ -151,7 +151,7 @@ export function SiteFooter() {
           <div className="max-w-sm">
             <BrandLockup onDark />
             <p className="mt-5 text-sm leading-relaxed text-primary-foreground/70">
-              CertifyHub is the official verification service for credentials issued by Weskill.
+              WeCertify is the official verification service for credentials issued by Weskill.
               Anyone can confirm a certificate's authenticity in seconds — free, and without an
               account.
             </p>
@@ -194,7 +194,7 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-primary-foreground/15 pt-6 text-xs text-primary-foreground/55 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} Weskill. All rights reserved.</p>
-          <p>CertifyHub — trusted verification for Weskill certificates.</p>
+          <p>WeCertify — trusted verification for Weskill certificates.</p>
         </div>
       </div>
     </footer>

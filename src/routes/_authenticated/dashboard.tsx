@@ -2,39 +2,66 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, LogOut, Plus, ShieldCheck } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  Mail,
+  Maximize2,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BrandLockup } from "@/components/certifyhub/Brand";
-import { TemplateManager } from "@/components/certifyhub/TemplateManager";
+import { TemplateManager, type TemplateDraft } from "@/components/certifyhub/TemplateManager";
 import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
+import { TemplateSelector } from "@/components/certifyhub/TemplateSelector";
+import { SmtpSettingsDialog } from "@/components/certifyhub/SmtpSettingsDialog";
+import { SendCertificateDialog } from "@/components/certifyhub/SendCertificateDialog";
 import { renderTemplate } from "@/lib/template";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  archiveTemplate,
   createCertificate,
   deleteTemplate,
+  duplicateTemplate,
+  generateUniqueCertificateNumber,
   getStaffAccess,
   listCertificates,
   listTemplates,
   saveTemplate,
   setCertificateStatus,
+  setDefaultTemplate,
+  unarchiveTemplate,
+  type ManagedCertificate,
 } from "@/lib/admin.functions";
-
+import {
+  DEFAULT_CERTIFICATE_PREFIX,
+  generateTimeBasedCertificateNumber,
+  getYearFromIssueDate,
+  isValidCertificateFormat,
+} from "@/lib/certificate-number";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Issuing dashboard — CertifyHub by Weskill" },
+      { title: "Issuing dashboard — WeCertify by Weskill" },
       {
         name: "description",
-        content: "Issue and manage Weskill certificates in the CertifyHub registry.",
+        content: "Issue and manage Weskill certificates in the WeCertify registry.",
       },
-      { property: "og:title", content: "Issuing dashboard — CertifyHub by Weskill" },
+      { property: "og:title", content: "Issuing dashboard — WeCertify by Weskill" },
       {
         property: "og:description",
-        content: "Issue and manage Weskill certificates in the CertifyHub registry.",
+        content: "Issue and manage Weskill certificates in the WeCertify registry.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -58,15 +85,16 @@ const STATUS_STYLES: Record<string, string> = {
   revoked: "border-destructive/40 bg-destructive/10 text-destructive",
 };
 
-const EMPTY_FORM = {
+const getInitialForm = () => ({
   certificateNumber: "",
   holderName: "",
+  recipientEmail: "",
   certificationTitle: "",
-  issueDate: "",
+  issueDate: new Date().toISOString().slice(0, 10),
   expiryDate: "",
   grade: "",
   templateId: "",
-};
+});
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -78,6 +106,11 @@ function Dashboard() {
   const fetchTemplates = useServerFn(listTemplates);
   const storeTemplate = useServerFn(saveTemplate);
   const removeTemplate = useServerFn(deleteTemplate);
+  const copyTemplate = useServerFn(duplicateTemplate);
+  const makeDefaultTemplate = useServerFn(setDefaultTemplate);
+  const archiveTpl = useServerFn(archiveTemplate);
+  const unarchiveTpl = useServerFn(unarchiveTemplate);
+  const generateServerNumber = useServerFn(generateUniqueCertificateNumber);
 
   const access = useQuery({ queryKey: ["staff-access"], queryFn: () => fetchAccess({}) });
   const certificates = useQuery({
@@ -89,29 +122,109 @@ function Dashboard() {
     queryFn: () => fetchTemplates({}),
   });
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(getInitialForm);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [enlargePreview, setEnlargePreview] = useState(false);
+  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
+  const [numberManuallyEdited, setNumberManuallyEdited] = useState(false);
+
+  // SMTP & Certificate Email dialog states
+  const [smtpDialogOpen, setSmtpDialogOpen] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [selectedCertForEmail, setSelectedCertForEmail] = useState<ManagedCertificate | null>(null);
+  const [isPostCreation, setIsPostCreation] = useState(false);
 
   const canIssue = Boolean(access.data?.isAdmin || access.data?.isIssuer);
   const isAdmin = Boolean(access.data?.isAdmin);
 
   const templateList = useMemo(() => templates.data ?? [], [templates.data]);
-  const selectedTemplate = useMemo(
-    () =>
-      templateList.find((t) => t.id === form.templateId) ??
-      (form.templateId ? undefined : templateList.find((t) => t.is_default)),
-    [templateList, form.templateId],
+
+  const selectedTemplate = useMemo(() => {
+    if (form.templateId === "none") return undefined;
+    if (form.templateId) {
+      return templateList.find((t) => t.id === form.templateId);
+    }
+    const activeList = templateList.filter((t) => !t.is_archived);
+    return activeList.find((t) => t.is_default) ?? activeList[0] ?? templateList[0];
+  }, [templateList, form.templateId]);
+
+  // Set default variables once a template is selected if empty
+  useEffect(() => {
+    if (selectedTemplate && Object.keys(variableValues).length === 0) {
+      const defaults: Record<string, string> = {};
+      for (const variable of selectedTemplate.variables) {
+        defaults[variable.key] = variable.defaultValue ?? "";
+      }
+      setVariableValues(defaults);
+    }
+  }, [selectedTemplate, variableValues]);
+
+  const handleGenerateNumber = useCallback(
+    async (targetYear?: number) => {
+      setIsGeneratingNumber(true);
+      const year = targetYear ?? getYearFromIssueDate(form.issueDate);
+      try {
+        const generated = await generateServerNumber({
+          data: { year, prefix: DEFAULT_CERTIFICATE_PREFIX },
+        });
+        setForm((prev) => ({ ...prev, certificateNumber: generated }));
+        setNumberManuallyEdited(false);
+      } catch {
+        // Fallback to calculation using certificates query cache
+        const existing = (certificates.data ?? []).map((c) => c.certificate_number);
+        const fallback = generateTimeBasedCertificateNumber(
+          existing,
+          year,
+          DEFAULT_CERTIFICATE_PREFIX,
+        );
+        setForm((prev) => ({ ...prev, certificateNumber: fallback }));
+      } finally {
+        setIsGeneratingNumber(false);
+      }
+    },
+    [form.issueDate, certificates.data, generateServerNumber],
   );
+
+  // Auto-generate initial certificate number when issuing access is confirmed
+  useEffect(() => {
+    if (!form.certificateNumber && canIssue && !isGeneratingNumber) {
+      void handleGenerateNumber();
+    }
+  }, [form.certificateNumber, canIssue, handleGenerateNumber, isGeneratingNumber]);
+
+  const handleIssueDateChange = (newDate: string) => {
+    const oldYear = getYearFromIssueDate(form.issueDate);
+    const newYear = getYearFromIssueDate(newDate);
+
+    setForm((prev) => ({ ...prev, issueDate: newDate }));
+
+    // If user hasn't manually edited the number, keep year in sync
+    if (!numberManuallyEdited && oldYear !== newYear) {
+      void handleGenerateNumber(newYear);
+    }
+  };
+
+  const isDuplicateNumber = useMemo(() => {
+    if (!form.certificateNumber.trim()) return false;
+    const current = form.certificateNumber.trim().toUpperCase();
+    return (certificates.data ?? []).some(
+      (c) => c.certificate_number.trim().toUpperCase() === current,
+    );
+  }, [form.certificateNumber, certificates.data]);
+
+  const isStandardFormat = useMemo(() => {
+    return isValidCertificateFormat(form.certificateNumber);
+  }, [form.certificateNumber]);
 
   const issuePreview = useMemo(() => {
     if (!selectedTemplate) return null;
     return renderTemplate(selectedTemplate.html, {
-      certificate_number: form.certificateNumber || "WSK-0000-000000",
-      holder_name: form.holderName || "Holder name",
-      certification_title: form.certificationTitle || "Certification title",
-      issue_date: form.issueDate || "—",
+      certificate_number: form.certificateNumber || "WE-2026-000456",
+      holder_name: form.holderName || "Ananya Sharma",
+      certification_title: form.certificationTitle || "Advanced Data Analytics Programme",
+      issue_date: form.issueDate || "2026-03-14",
       expiry_date: form.expiryDate,
       grade: form.grade,
       issuing_authority: "Weskill Certification Authority",
@@ -138,10 +251,11 @@ function Dashboard() {
     setSaving(true);
     setMessage(null);
     try {
-      await addCertificate({
+      const createdCert = await addCertificate({
         data: {
           certificateNumber: form.certificateNumber,
           holderName: form.holderName,
+          recipientEmail: form.recipientEmail,
           certificationTitle: form.certificationTitle,
           issueDate: form.issueDate,
           expiryDate: form.expiryDate,
@@ -151,10 +265,17 @@ function Dashboard() {
           templateData: variableValues,
         },
       });
-      setForm(EMPTY_FORM);
+      setForm(getInitialForm());
       setVariableValues({});
-      setMessage({ kind: "ok", text: "Certificate issued and now verifiable." });
+      setNumberManuallyEdited(false);
+      setMessage({ kind: "ok", text: "Certificate issued and registered in directory." });
       await queryClient.invalidateQueries({ queryKey: ["managed-certificates"] });
+      void handleGenerateNumber();
+
+      // Trigger Step 2: Next step would be to send it!
+      setSelectedCertForEmail(createdCert);
+      setIsPostCreation(true);
+      setSendDialogOpen(true);
     } catch (error) {
       setMessage({
         kind: "error",
@@ -165,14 +286,7 @@ function Dashboard() {
     }
   }
 
-  async function handleSaveTemplate(draft: {
-    id: string;
-    name: string;
-    description: string;
-    html: string;
-    variables: { key: string; label: string; defaultValue?: string }[];
-    isDefault: boolean;
-  }) {
+  async function handleSaveTemplate(draft: TemplateDraft) {
     setMessage(null);
     try {
       await storeTemplate({ data: draft });
@@ -190,6 +304,7 @@ function Dashboard() {
   async function handleDeleteTemplate(id: string) {
     try {
       await removeTemplate({ data: { id } });
+      setMessage({ kind: "ok", text: "Template deleted." });
       await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
     } catch (error) {
       setMessage({
@@ -199,6 +314,57 @@ function Dashboard() {
     }
   }
 
+  async function handleDuplicateTemplate(id: string) {
+    try {
+      await copyTemplate({ data: { id } });
+      setMessage({ kind: "ok", text: "Template duplicated successfully." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not duplicate template.",
+      });
+    }
+  }
+
+  async function handleSetDefaultTemplate(id: string) {
+    try {
+      await makeDefaultTemplate({ data: { id } });
+      setMessage({ kind: "ok", text: "Default template updated." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not set default template.",
+      });
+    }
+  }
+
+  async function handleArchiveTemplate(id: string) {
+    try {
+      await archiveTpl({ data: { id } });
+      setMessage({ kind: "ok", text: "Template archived." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not archive template.",
+      });
+    }
+  }
+
+  async function handleUnarchiveTemplate(id: string) {
+    try {
+      await unarchiveTpl({ data: { id } });
+      setMessage({ kind: "ok", text: "Template restored to active." });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+    } catch (error) {
+      setMessage({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Could not restore template.",
+      });
+    }
+  }
 
   async function handleStatus(id: string, status: "active" | "revoked") {
     try {
@@ -229,6 +395,17 @@ function Dashboard() {
             <span className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gold">
               {isAdmin ? "Administrator" : canIssue ? "Issuer" : "No issuing access"}
             </span>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSmtpDialogOpen(true)}
+                className="gap-1.5 border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 hover:text-gold shadow-sm"
+              >
+                <Mail className="size-3.5" />
+                SMTP Settings
+              </Button>
+            )}
             <Button variant="secondary" size="sm" onClick={() => void handleSignOut()}>
               <LogOut className="size-4" />
               Sign out
@@ -240,8 +417,8 @@ function Dashboard() {
             Issuing dashboard
           </h1>
           <p className="mt-2 max-w-2xl text-primary-foreground/70">
-            Add credentials to the live Weskill registry. Everything issued here is instantly
-            verifiable by anyone — no account needed on their side.
+            Add credentials to the live Weskill registry. Choose from multiple certificate templates
+            and issue credentials that are instantly verifiable by anyone.
           </p>
         </div>
       </header>
@@ -266,8 +443,8 @@ function Dashboard() {
           </div>
         ) : !canIssue ? (
           <p className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
-            Your account is signed in but has no issuing permissions yet. Ask a Weskill administrator
-            to grant you issuer access.
+            Your account is signed in but has no issuing permissions yet. Ask a Weskill
+            administrator to grant you issuer access.
           </p>
         ) : (
           <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-lift sm:p-8">
@@ -275,18 +452,129 @@ function Dashboard() {
               <ShieldCheck className="size-4 text-emerald" />
               Issue a certificate
             </div>
-            <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={handleCreate}>
-              <div className="space-y-2">
-                <Label htmlFor="certificateNumber">Certificate number</Label>
-                <Input
-                  id="certificateNumber"
-                  required
-                  value={form.certificateNumber}
-                  onChange={(e) => setForm({ ...form, certificateNumber: e.target.value })}
-                  placeholder="WSK-2026-000456"
-                  className="h-11 font-mono uppercase"
+
+            <form className="mt-6 grid gap-6 sm:grid-cols-2" onSubmit={handleCreate}>
+              {/* Template Selector Card Grid */}
+              <div className="sm:col-span-2">
+                <TemplateSelector
+                  templates={templateList}
+                  selectedId={
+                    form.templateId === "none"
+                      ? ""
+                      : form.templateId || (selectedTemplate?.id ?? "")
+                  }
+                  onSelect={(id) => {
+                    const nextId = id === "" ? "none" : id;
+                    const next = templateList.find((t) => t.id === id);
+                    setForm({ ...form, templateId: nextId });
+                    const defaults: Record<string, string> = {};
+                    for (const variable of next?.variables ?? []) {
+                      defaults[variable.key] =
+                        variableValues[variable.key] || variable.defaultValue || "";
+                    }
+                    setVariableValues(defaults);
+                  }}
+                  onAddNew={() => {
+                    const el = document.getElementById("template-manager-section");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  sampleData={{
+                    certificate_number: form.certificateNumber || "WE-2026-000456",
+                    holder_name: form.holderName || "Ananya Sharma",
+                    certification_title:
+                      form.certificationTitle || "Advanced Data Analytics Programme",
+                    issue_date: form.issueDate || "2026-03-14",
+                    expiry_date: form.expiryDate,
+                    grade: form.grade,
+                    issuing_authority: "Weskill Certification Authority",
+                    status: "active",
+                    ...variableValues,
+                  }}
                 />
               </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="certificateNumber">Certificate number</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void handleGenerateNumber()}
+                    disabled={isGeneratingNumber}
+                    className="h-7 gap-1.5 px-2 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary transition-colors"
+                    title="Autogenerate unique time-based certificate number"
+                  >
+                    {isGeneratingNumber ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-3.5" />
+                    )}
+                    <span>{isGeneratingNumber ? "Generating…" : "Auto-generate"}</span>
+                  </Button>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    id="certificateNumber"
+                    required
+                    value={form.certificateNumber}
+                    onChange={(e) => {
+                      setNumberManuallyEdited(true);
+                      setForm({ ...form, certificateNumber: e.target.value.toUpperCase() });
+                    }}
+                    placeholder="WE-2026-Y38AE4TC"
+                    className={`h-11 font-mono uppercase pr-24 ${
+                      isDuplicateNumber
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : isStandardFormat
+                        ? "border-emerald/50"
+                        : ""
+                    }`}
+                  />
+                  <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void handleGenerateNumber()}
+                      disabled={isGeneratingNumber}
+                      className="h-8 gap-1 text-xs px-2.5 bg-secondary/80 hover:bg-secondary font-medium"
+                      title="Generate new unique certificate number"
+                    >
+                      {isGeneratingNumber ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="size-3" />
+                      )}
+                      <span>New</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Status & helper badges */}
+                <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                  {isDuplicateNumber ? (
+                    <span className="flex items-center gap-1 text-destructive font-medium">
+                      <AlertCircle className="size-3" /> That certificate number already exists in registry
+                    </span>
+                  ) : isStandardFormat ? (
+                    <span className="flex items-center gap-1 text-emerald font-medium">
+                      <Check className="size-3" /> Unique & verified format (Time-based Alphanumeric)
+                    </span>
+                  ) : form.certificateNumber ? (
+                    <span className="text-muted-foreground">
+                      Standard format: <code className="font-mono font-semibold">WE-YYYY-[CODE]</code>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Will be automatically assigned if left blank
+                    </span>
+                  )}
+                  <span className="text-muted-foreground font-mono">Format: WE-[Year]-[Alphanumeric Time]</span>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="holderName">Holder name</Label>
                 <Input
@@ -298,6 +586,24 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="recipientEmail">Recipient email (optional)</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Pre-populates next-step email dispatch
+                  </span>
+                </div>
+                <Input
+                  id="recipientEmail"
+                  type="email"
+                  value={form.recipientEmail}
+                  onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })}
+                  placeholder="ananya.sharma@example.com"
+                  className="h-11"
+                />
+              </div>
+
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="certificationTitle">Certification title</Label>
                 <Input
@@ -309,6 +615,7 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="issueDate">Issue date</Label>
                 <Input
@@ -316,10 +623,11 @@ function Dashboard() {
                   type="date"
                   required
                   value={form.issueDate}
-                  onChange={(e) => setForm({ ...form, issueDate: e.target.value })}
+                  onChange={(e) => handleIssueDateChange(e.target.value)}
                   className="h-11"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="expiryDate">Expiry date (optional)</Label>
                 <Input
@@ -330,8 +638,9 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grade (optional)</Label>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="grade">Grade / Standing (optional)</Label>
                 <Input
                   id="grade"
                   value={form.grade}
@@ -340,64 +649,71 @@ function Dashboard() {
                   className="h-11"
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="templateId">Certificate template</Label>
-                <select
-                  id="templateId"
-                  value={selectedTemplate?.id ?? ""}
-                  onChange={(e) => {
-                    const next = templateList.find((t) => t.id === e.target.value);
-                    setForm({ ...form, templateId: e.target.value });
-                    const defaults: Record<string, string> = {};
-                    for (const variable of next?.variables ?? []) {
-                      defaults[variable.key] = variable.defaultValue ?? "";
-                    }
-                    setVariableValues(defaults);
-                  }}
-                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">No template (data only)</option>
-                  {templateList.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                      {template.is_default ? " (default)" : ""}
-                    </option>
-                  ))}
-                </select>
-                {selectedTemplate?.description && (
-                  <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
+
+              {/* Dynamic Template Custom Variables */}
+              {selectedTemplate &&
+                selectedTemplate.variables &&
+                selectedTemplate.variables.length > 0 && (
+                  <div className="sm:col-span-2 rounded-2xl border border-emerald/30 bg-emerald/5 p-4 sm:p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-emerald">
+                        Custom Template Fields: {selectedTemplate.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {selectedTemplate.variables.length} custom field
+                        {selectedTemplate.variables.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {selectedTemplate.variables.map((variable) => (
+                        <div className="space-y-1.5" key={variable.key}>
+                          <Label htmlFor={`var-${variable.key}`} className="text-xs font-medium">
+                            {variable.label}
+                          </Label>
+                          <Input
+                            id={`var-${variable.key}`}
+                            value={variableValues[variable.key] ?? ""}
+                            onChange={(e) =>
+                              setVariableValues({
+                                ...variableValues,
+                                [variable.key]: e.target.value,
+                              })
+                            }
+                            placeholder={variable.defaultValue || variable.key}
+                            className="h-10 text-sm bg-background"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </div>
 
-              {(selectedTemplate?.variables ?? []).map((variable) => (
-                <div className="space-y-2" key={variable.key}>
-                  <Label htmlFor={`var-${variable.key}`}>{variable.label}</Label>
-                  <Input
-                    id={`var-${variable.key}`}
-                    value={variableValues[variable.key] ?? ""}
-                    onChange={(e) =>
-                      setVariableValues({ ...variableValues, [variable.key]: e.target.value })
-                    }
-                    placeholder={variable.defaultValue || variable.key}
-                    className="h-11"
-                  />
-                </div>
-              ))}
-
+              {/* Live Preview & Fullscreen Option */}
               {issuePreview && (
                 <div className="space-y-2 sm:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Template preview
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Live Certificate Preview ({selectedTemplate?.name ?? "Custom"})
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEnlargePreview(true)}
+                      className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Maximize2 className="size-3.5" /> Enlarge Preview
+                    </Button>
+                  </div>
                   <TemplatePreview
                     html={issuePreview}
                     title="Certificate template preview"
-                    className="h-[420px] w-full rounded-2xl border border-border bg-white"
+                    className="h-[440px] w-full rounded-2xl border border-border bg-white shadow-soft"
                   />
                 </div>
               )}
 
-              <div className="flex items-end">
+              <div className="sm:col-span-2">
                 <Button type="submit" size="lg" className="h-11 w-full" disabled={saving}>
                   {saving ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -411,19 +727,25 @@ function Dashboard() {
           </section>
         )}
 
+        {/* Template Manager */}
         {canIssue && (
-          <TemplateManager
-            templates={templateList}
-            isLoading={templates.isLoading}
-            canEdit={canIssue}
-            canDelete={isAdmin}
-            onSave={handleSaveTemplate}
-            onDelete={handleDeleteTemplate}
-          />
+          <div id="template-manager-section">
+            <TemplateManager
+              templates={templateList}
+              isLoading={templates.isLoading}
+              canEdit={canIssue}
+              canDelete={isAdmin}
+              onSave={handleSaveTemplate}
+              onDelete={handleDeleteTemplate}
+              onDuplicate={handleDuplicateTemplate}
+              onSetDefault={handleSetDefaultTemplate}
+              onArchive={handleArchiveTemplate}
+              onUnarchive={handleUnarchiveTemplate}
+            />
+          </div>
         )}
 
-
-
+        {/* Registry Table */}
         <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-lift sm:p-8">
           <h2 className="font-display text-xl font-semibold text-foreground">Registry</h2>
           {certificates.isLoading ? (
@@ -442,7 +764,8 @@ function Dashboard() {
                     <th className="py-3 pr-4 font-semibold">Programme</th>
                     <th className="py-3 pr-4 font-semibold">Issued</th>
                     <th className="py-3 pr-4 font-semibold">Status</th>
-                    {isAdmin && <th className="py-3 font-semibold">Actions</th>}
+                    <th className="py-3 pr-4 font-semibold">Email Delivery</th>
+                    <th className="py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -461,27 +784,70 @@ function Dashboard() {
                           {row.status}
                         </span>
                       </td>
-                      {isAdmin && (
-                        <td className="py-3">
-                          {row.status === "revoked" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => void handleStatus(row.id, "active")}
+                      <td className="py-3 pr-4">
+                        {row.email_sent_at ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className="inline-flex w-fit items-center gap-1 rounded-full border border-emerald/40 bg-emerald/10 px-2.5 py-0.5 text-xs font-medium text-emerald"
+                              title={`Sent at: ${new Date(row.email_sent_at).toLocaleString()}`}
                             >
-                              Reinstate
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => void handleStatus(row.id, "revoked")}
-                            >
-                              Revoke
-                            </Button>
-                          )}
-                        </td>
-                      )}
+                              <CheckCircle2 className="size-3" /> Emailed
+                            </span>
+                            {row.recipient_email && (
+                              <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
+                                {row.recipient_email}
+                              </span>
+                            )}
+                          </div>
+                        ) : row.recipient_email ? (
+                          <span
+                            className="text-xs text-muted-foreground truncate max-w-[140px] block"
+                            title={row.recipient_email}
+                          >
+                            {row.recipient_email}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/60 italic">Not sent</span>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCertForEmail(row);
+                              setIsPostCreation(false);
+                              setSendDialogOpen(true);
+                            }}
+                            className="h-8 gap-1.5 text-xs border-gold/30 text-gold hover:bg-gold/10 hover:text-gold"
+                            title="Send certificate to recipient via email"
+                          >
+                            <Mail className="size-3.5" />
+                            {row.email_sent_at ? "Resend" : "Send"}
+                          </Button>
+                          {isAdmin &&
+                            (row.status === "revoked" ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void handleStatus(row.id, "active")}
+                                className="h-8 text-xs"
+                              >
+                                Reinstate
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void handleStatus(row.id, "revoked")}
+                                className="h-8 text-xs"
+                              >
+                                Revoke
+                              </Button>
+                            ))}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -490,6 +856,52 @@ function Dashboard() {
           )}
         </section>
       </main>
+
+      {/* Enlarge Preview Dialog */}
+      <Dialog open={enlargePreview} onOpenChange={setEnlargePreview}>
+        <DialogContent className="max-w-5xl p-6 sm:p-8">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold font-display">
+              Certificate Preview: {selectedTemplate?.name}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              High-resolution certificate preview rendering with your currently entered issuance
+              details.
+            </p>
+          </DialogHeader>
+          {issuePreview && (
+            <div className="mt-4">
+              <TemplatePreview
+                html={issuePreview}
+                title="Fullscreen certificate preview"
+                className="h-[540px] w-full rounded-xl border border-border bg-white"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin SMTP Settings Dialog */}
+      <SmtpSettingsDialog
+        open={smtpDialogOpen}
+        onOpenChange={setSmtpDialogOpen}
+        onSaved={() => {
+          setMessage({ kind: "ok", text: "SMTP configuration updated successfully." });
+        }}
+      />
+
+      {/* Send Certificate Dialog (Triggered post-issuance or from registry row) */}
+      <SendCertificateDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        certificate={selectedCertForEmail}
+        isPostCreation={isPostCreation}
+        isAdmin={isAdmin}
+        onOpenSmtpSettings={() => setSmtpDialogOpen(true)}
+        onEmailSent={() => {
+          void queryClient.invalidateQueries({ queryKey: ["managed-certificates"] });
+        }}
+      />
     </div>
   );
 }

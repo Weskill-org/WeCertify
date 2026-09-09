@@ -77,16 +77,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CertifyHub by Weskill" },
+      { title: "WeCertify by Weskill" },
       {
         name: "description",
-        content: "Instantly verify the authenticity of Weskill certificates with CertifyHub.",
+        content: "Instantly verify the authenticity of Weskill certificates with WeCertify.",
       },
       { name: "author", content: "Weskill" },
-      { property: "og:title", content: "CertifyHub by Weskill" },
+      { property: "og:title", content: "WeCertify by Weskill" },
       {
         property: "og:description",
-        content: "Instantly verify the authenticity of Weskill certificates with CertifyHub.",
+        content: "Instantly verify the authenticity of Weskill certificates with WeCertify.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

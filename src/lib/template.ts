@@ -11,6 +11,7 @@ export type CertificateTemplate = {
   html: string;
   variables: TemplateVariable[];
   is_default: boolean;
+  is_archived: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -5,7 +5,7 @@ import { BrandLockup } from "@/components/certifyhub/Brand";
 import { VerificationPanel } from "@/components/certifyhub/VerificationPanel";
 import { HowItWorks, SiteFooter, WhyTrust } from "@/components/certifyhub/Sections";
 
-const TITLE = "CertifyHub by Weskill — Verify a Weskill Certificate";
+const TITLE = "WeCertify by Weskill — Verify a Weskill Certificate";
 const DESCRIPTION =
   "Instantly confirm the authenticity of any Weskill certificate. Enter the certificate number or scan its QR code to see the holder, programme and validity status.";
 
@@ -31,7 +31,7 @@ const TRUST_SIGNALS = [
 
 // Stable, SSR-safe absolute URL so the rendered QR matches between server and client.
 const SAMPLE_QR_VALUE =
-  "https://project--3a3f6455-7df7-477f-abc6-f7788111b229.lovable.app/?id=WSK-2025-000123";
+  "https://project--3a3f6455-7df7-477f-abc6-f7788111b229.lovable.app/?id=WE-2025-000123";
 
 function Index() {
   return (
@@ -80,7 +80,7 @@ function Index() {
               </h1>
 
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/70">
-                CertifyHub checks any Weskill certificate against the live issuing registry — so
+                WeCertify checks any Weskill certificate against the live issuing registry — so
                 employers, institutions and partners can trust what they're looking at in seconds.
               </p>
 

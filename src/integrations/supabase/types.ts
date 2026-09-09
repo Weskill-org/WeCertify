@@ -21,6 +21,7 @@ export type Database = {
           description: string | null
           html: string
           id: string
+          is_archived: boolean
           is_default: boolean
           name: string
           updated_at: string
@@ -32,6 +33,7 @@ export type Database = {
           description?: string | null
           html: string
           id?: string
+          is_archived?: boolean
           is_default?: boolean
           name: string
           updated_at?: string
@@ -43,6 +45,7 @@ export type Database = {
           description?: string | null
           html?: string
           id?: string
+          is_archived?: boolean
           is_default?: boolean
           name?: string
           updated_at?: string
@@ -64,6 +67,8 @@ export type Database = {
           status: string
           template_data: Json
           template_id: string | null
+          recipient_email: string | null
+          email_sent_at: string | null
         }
         Insert: {
           certificate_number: string
@@ -78,6 +83,8 @@ export type Database = {
           status?: string
           template_data?: Json
           template_id?: string | null
+          recipient_email?: string | null
+          email_sent_at?: string | null
         }
         Update: {
           certificate_number?: string
@@ -92,6 +99,8 @@ export type Database = {
           status?: string
           template_data?: Json
           template_id?: string | null
+          recipient_email?: string | null
+          email_sent_at?: string | null
         }
         Relationships: [
           {
@@ -102,6 +111,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      smtp_settings: {
+        Row: {
+          id: string
+          host: string
+          port: number
+          secure: boolean
+          user_name: string
+          password: string
+          from_email: string
+          from_name: string
+          default_subject: string
+          default_body: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          host?: string
+          port?: number
+          secure?: boolean
+          user_name?: string
+          password?: string
+          from_email?: string
+          from_name?: string
+          default_subject?: string
+          default_body?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          host?: string
+          port?: number
+          secure?: boolean
+          user_name?: string
+          password?: string
+          from_email?: string
+          from_name?: string
+          default_subject?: string
+          default_body?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

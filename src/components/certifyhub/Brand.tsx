@@ -45,7 +45,7 @@ export function BrandLockup({
             onDark ? "text-primary-foreground" : "text-foreground",
           )}
         >
-          Certify<span className="text-gold">Hub</span>
+          We<span className="text-gold">Certify</span>
         </span>
         <span
           className={cn(

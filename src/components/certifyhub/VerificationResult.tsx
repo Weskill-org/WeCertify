@@ -156,7 +156,7 @@ export function VerificationResultPanel({
           <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
             <li className="flex gap-2">
               <ShieldAlert className="mt-0.5 size-4 shrink-0 text-gold" />
-              Check the certificate number, including dashes (e.g. WSK-2025-000123).
+              Check the certificate number, including dashes (e.g. WE-2025-000123).
             </li>
             <li className="flex gap-2">
               <ShieldAlert className="mt-0.5 size-4 shrink-0 text-gold" />

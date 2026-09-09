@@ -9,7 +9,7 @@ import { QrScannerDialog } from "./QrScannerDialog";
 import { VerificationResultPanel } from "./VerificationResult";
 import { verifyCertificate, type VerificationResult } from "@/lib/certificates.functions";
 
-const SAMPLES = ["WSK-2025-000123", "WSK-2024-000789", "WSK-2024-000321"];
+const SAMPLES = ["WE-2025-000123", "WE-2024-000789", "WE-2024-000321"];
 
 export function VerificationPanel() {
   const verify = useServerFn(verifyCertificate);
@@ -44,7 +44,7 @@ export function VerificationPanel() {
     [verify],
   );
 
-  // Scanned QR codes link to /?id=WSK-... — verify automatically on arrival.
+  // Scanned QR codes link to /?id=WE-... — verify automatically on arrival.
   const deepLinkHandled = useRef(false);
   useEffect(() => {
     if (deepLinkHandled.current) return;
@@ -119,7 +119,7 @@ export function VerificationPanel() {
                 id="certificate-number"
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
-                placeholder="WSK-2025-000123"
+                placeholder="WE-2025-000123"
                 autoComplete="off"
                 spellCheck={false}
                 maxLength={64}
