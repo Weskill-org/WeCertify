@@ -25,7 +25,7 @@ import { BrandLockup } from "@/components/certifyhub/Brand";
 import { TemplateManager, type TemplateDraft } from "@/components/certifyhub/TemplateManager";
 import { TemplatePreview } from "@/components/certifyhub/TemplatePreview";
 import { TemplateSelector } from "@/components/certifyhub/TemplateSelector";
-import { SmtpSettingsDialog } from "@/components/certifyhub/SmtpSettingsDialog";
+import { EmailSettingsDialog } from "@/components/certifyhub/EmailSettingsDialog";
 import { SendCertificateDialog } from "@/components/certifyhub/SendCertificateDialog";
 import { IssuerManagerDialog } from "@/components/certifyhub/IssuerManagerDialog";
 import { renderTemplate } from "@/lib/template";
@@ -132,8 +132,8 @@ function Dashboard() {
   const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
   const [numberManuallyEdited, setNumberManuallyEdited] = useState(false);
 
-  // SMTP & Certificate Email dialog states
-  const [smtpDialogOpen, setSmtpDialogOpen] = useState(false);
+  // Email & Certificate dialog states
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [issuersDialogOpen, setIssuersDialogOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedCertForEmail, setSelectedCertForEmail] = useState<ManagedCertificate | null>(null);
@@ -412,11 +412,11 @@ function Dashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSmtpDialogOpen(true)}
+                  onClick={() => setEmailDialogOpen(true)}
                   className="gap-1.5 border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 hover:text-gold shadow-sm"
                 >
                   <Mail className="size-3.5" />
-                  SMTP Settings
+                  Email Settings
                 </Button>
               </>
             )}
@@ -895,12 +895,12 @@ function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Admin SMTP Settings Dialog */}
-      <SmtpSettingsDialog
-        open={smtpDialogOpen}
-        onOpenChange={setSmtpDialogOpen}
+      {/* Admin Email Settings Dialog */}
+      <EmailSettingsDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
         onSaved={() => {
-          setMessage({ kind: "ok", text: "SMTP configuration updated successfully." });
+          setMessage({ kind: "ok", text: "Email configuration updated successfully." });
         }}
       />
 
@@ -918,7 +918,7 @@ function Dashboard() {
         certificate={selectedCertForEmail}
         isPostCreation={isPostCreation}
         isAdmin={isAdmin}
-        onOpenSmtpSettings={() => setSmtpDialogOpen(true)}
+        onOpenEmailSettings={() => setEmailDialogOpen(true)}
         onEmailSent={() => {
           void queryClient.invalidateQueries({ queryKey: ["managed-certificates"] });
         }}

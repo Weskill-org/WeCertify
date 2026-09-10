@@ -126,6 +126,8 @@ export type Database = {
           default_body: string
           created_at: string
           updated_at: string
+          provider: string
+          resend_api_key: string | null
         }
         Insert: {
           id?: string
@@ -140,6 +142,8 @@ export type Database = {
           default_body?: string
           created_at?: string
           updated_at?: string
+          provider?: string
+          resend_api_key?: string | null
         }
         Update: {
           id?: string
@@ -154,8 +158,54 @@ export type Database = {
           default_body?: string
           created_at?: string
           updated_at?: string
+          provider?: string
+          resend_api_key?: string | null
         }
         Relationships: []
+      }
+      certificate_email_logs: {
+        Row: {
+          id: string
+          certificate_id: string | null
+          recipient_email: string
+          subject: string
+          status: string
+          provider: string
+          error_message: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          certificate_id?: string | null
+          recipient_email: string
+          subject: string
+          status?: string
+          provider?: string
+          error_message?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          certificate_id?: string | null
+          recipient_email?: string
+          subject?: string
+          status?: string
+          provider?: string
+          error_message?: string | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_email_logs_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

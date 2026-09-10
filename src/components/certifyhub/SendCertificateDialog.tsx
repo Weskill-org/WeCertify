@@ -4,11 +4,11 @@ import {
   AlertCircle,
   Award,
   CheckCircle2,
-  ExternalLink,
   Loader2,
   Mail,
   Send,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ interface SendCertificateDialogProps {
   isPostCreation?: boolean;
   isAdmin?: boolean;
   onOpenSmtpSettings?: () => void;
+  onOpenEmailSettings?: () => void;
   onEmailSent?: () => void;
 }
 
@@ -46,15 +47,13 @@ export function SendCertificateDialog({
   onOpenChange,
   certificate,
   isPostCreation = false,
-  isAdmin = false,
-  onOpenSmtpSettings,
   onEmailSent,
 }: SendCertificateDialogProps) {
-  const fetchSmtp = useServerFn(getSmtpSettings);
+  const fetchSettings = useServerFn(getSmtpSettings);
   const sendEmail = useServerFn(sendCertificateEmail);
 
   const [loadingConfig, setLoadingConfig] = useState(false);
-  const [smtpConfig, setSmtpConfig] = useState<SmtpPublicConfig | null>(null);
+  const [, setEmailConfig] = useState<SmtpPublicConfig | null>(null);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -91,8 +90,8 @@ export function SendCertificateDialog({
     async function init() {
       setLoadingConfig(true);
       try {
-        const config = await fetchSmtp({});
-        setSmtpConfig(config);
+        const config = await fetchSettings({});
+        setEmailConfig(config);
 
         if (certData) {
           const templatedSubject = replacePlaceholders(
@@ -106,14 +105,14 @@ export function SendCertificateDialog({
           setBody(templatedBody);
         }
       } catch (err) {
-        console.error("Failed to load SMTP settings:", err);
+        console.error("Failed to load email settings:", err);
       } finally {
         setLoadingConfig(false);
       }
     }
 
     void init();
-  }, [open, certificate, certData, fetchSmtp]);
+  }, [open, certificate, certData, fetchSettings]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -137,9 +136,13 @@ export function SendCertificateDialog({
         },
       });
 
+      const messageText = result.sandboxNotice
+        ? `Certificate email dispatched via Supabase Mail to ${result.recipient}!`
+        : `Certificate successfully emailed to ${result.recipient} via Supabase Mail!`;
+
       setStatusMessage({
         type: "success",
-        text: `Certificate successfully emailed to ${result.recipient}!`,
+        text: messageText,
       });
       onEmailSent?.();
 
@@ -150,7 +153,7 @@ export function SendCertificateDialog({
     } catch (err) {
       setStatusMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to dispatch certificate email.",
+        text: err instanceof Error ? err.message : "Failed to dispatch certificate email via Supabase.",
       });
     } finally {
       setSending(false);
@@ -174,8 +177,8 @@ export function SendCertificateDialog({
                 Next Step: Email Certificate to Recipient
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                The certificate is registered in the official directory. Now deliver it directly to
-                the recipient's inbox. You can edit the subject and message below.
+                The certificate is registered in the official registry. Dispatched via Supabase Mail
+                directly to the recipient's inbox.
               </DialogDescription>
             </div>
           ) : (
@@ -188,7 +191,7 @@ export function SendCertificateDialog({
                   Send Certificate via Email
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Deliver official credential notification to the certificate holder.
+                  Deliver official credential notification through Supabase Mail system.
                 </DialogDescription>
               </div>
             </div>
@@ -222,33 +225,11 @@ export function SendCertificateDialog({
           </div>
         </div>
 
-        {/* SMTP Warning if unconfigured */}
-        {smtpConfig && !smtpConfig.isConfigured && (
-          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400">
-              <AlertCircle className="size-4 shrink-0" />
-              SMTP Server Not Configured
-            </div>
-            <p className="text-muted-foreground">
-              Outgoing mail delivery requires SMTP settings. Please configure an SMTP server (e.g.,
-              Gmail, SendGrid, Amazon SES) before sending.
-            </p>
-            {isAdmin && onOpenSmtpSettings && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  onOpenChange(false);
-                  onOpenSmtpSettings();
-                }}
-                className="h-8 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300"
-              >
-                Configure SMTP Settings
-              </Button>
-            )}
-          </div>
-        )}
+        {/* Delivery Indicator */}
+        <div className="flex items-center gap-2 rounded-xl border border-emerald/30 bg-emerald/10 px-3.5 py-2 text-xs text-emerald">
+          <ShieldCheck className="size-3.5 shrink-0" />
+          <span>Delivered securely via Supabase Mail system</span>
+        </div>
 
         {statusMessage && (
           <div
@@ -325,8 +306,8 @@ export function SendCertificateDialog({
               />
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Sparkles className="size-3 text-gold" />
-                The recipient will also receive an official certificate card and a direct online
-                verification link.
+                The recipient will also receive an official credential card and direct verification
+                link.
               </p>
             </div>
 
@@ -343,7 +324,7 @@ export function SendCertificateDialog({
               <div className="flex items-center gap-2">
                 <Button
                   type="submit"
-                  disabled={sending || (smtpConfig ? !smtpConfig.isConfigured : false)}
+                  disabled={sending || !recipientEmail.trim()}
                   className="bg-gold hover:bg-gold-dark text-gold-foreground font-semibold px-5 shadow-gold gap-2"
                 >
                   {sending ? (
@@ -351,7 +332,7 @@ export function SendCertificateDialog({
                   ) : (
                     <Send className="size-4" />
                   )}
-                  {sending ? "Sending…" : "Send Email"}
+                  {sending ? "Sending via Supabase…" : "Send Email"}
                 </Button>
               </div>
             </div>
