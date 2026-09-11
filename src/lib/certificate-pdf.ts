@@ -141,7 +141,9 @@ export async function generateCertificatePdf(data: CertificatePdfData): Promise<
     },
   });
   const qrImage = await doc.embedPng(qrPngBuffer);
-  const authority = cleanText(data.issuingAuthority || "Weskill Certification Authority").toUpperCase();
+  const authority = cleanText(
+    data.issuingAuthority || "Weskill Certification Authority",
+  ).toUpperCase();
 
   // =========================================================================
   // TEMPLATE 1: PRESTIGIOUS INTERNSHIP COMPLETION
@@ -281,7 +283,7 @@ export async function generateCertificatePdf(data: CertificatePdfData): Promise<
     if (tpl["project_name"]) badges.push(`Capstone: ${tpl["project_name"]}`);
     if (data.grade) badges.push(`Rating: ${data.grade}`);
 
-    let badgeY = height - 322;
+    const badgeY = height - 322;
     if (badges.length > 0) {
       const badgeText = badges.join("     |     ");
       const bWidth = helveticaBold.widthOfTextAtSize(badgeText, 10) + 32;
@@ -541,7 +543,13 @@ export async function generateCertificatePdf(data: CertificatePdfData): Promise<
       borderWidth: 1,
     });
 
-    drawCenteredText("EXECUTIVE LEADERSHIP & GOVERNANCE", height - 60, helveticaBold, 9, goldAccent);
+    drawCenteredText(
+      "EXECUTIVE LEADERSHIP & GOVERNANCE",
+      height - 60,
+      helveticaBold,
+      9,
+      goldAccent,
+    );
     drawCenteredText(authority, height - 78, helveticaBold, 15, crimson);
     drawCenteredText(
       "Executive Certificate of Excellence",
@@ -654,7 +662,13 @@ export async function generateCertificatePdf(data: CertificatePdfData): Promise<
     drawCenteredText(data.certificationTitle, height - 276, helveticaBold, 17, goldColor);
 
     if (tpl["academic_honors"]) {
-      drawCenteredText(`Honors: ${tpl["academic_honors"]}`, height - 310, helveticaBold, 11, goldColor);
+      drawCenteredText(
+        `Honors: ${tpl["academic_honors"]}`,
+        height - 310,
+        helveticaBold,
+        11,
+        goldColor,
+      );
     }
 
     const qrSize = 56;
@@ -719,7 +733,13 @@ export async function generateCertificatePdf(data: CertificatePdfData): Promise<
       borderWidth: 1.5,
     });
 
-    drawCenteredText("ENGINEERING ACCREDITATION REGISTRY", height - 60, helveticaBold, 9, cyanAccent);
+    drawCenteredText(
+      "ENGINEERING ACCREDITATION REGISTRY",
+      height - 60,
+      helveticaBold,
+      9,
+      cyanAccent,
+    );
     drawCenteredText(authority, height - 78, helveticaBold, 15, cyberNavy);
     drawCenteredText(
       "Certificate of Technical Proficiency",

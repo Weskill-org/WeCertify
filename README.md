@@ -5,6 +5,7 @@ Build "WeCertify by Weskill" — a frontend certification verification website.
 Brand: WeCertify by Weskill. Premium, trustworthy, modern aesthetic — think fintech/enterprise SaaS polish: refined typography, subtle gradients, soft shadows, generous whitespace, smooth micro-animations, dark/light-friendly color palette (deep navy/charcoal + a gold or emerald accent to signal "certified/verified"). Should feel like a serious credentialing authority, not a template.
 
 Landing page:
+
 - Strong hero with Weskill/WeCertify branding, headline about verifying certificate authenticity instantly, and trust signals (e.g. "Trusted verification for Weskill certificates").
 - A prominent verification panel with two clear options: (1) enter a Certificate Number/ID and submit, (2) scan a QR code using the device camera.
 - QR scanning should open a camera scanner (with a graceful fallback/upload-image option for devices without camera access) and auto-extract the certificate ID from the QR payload.

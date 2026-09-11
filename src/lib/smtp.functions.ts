@@ -768,7 +768,7 @@ export const getCertificateRenderedHtml = createServerFn({ method: "POST" })
           issuing_authority: cert.issuing_authority,
           status: cert.status,
           verification_url: verificationUrl,
-          ...(cert.template_data as Record<string, string> ?? {}),
+          ...((cert.template_data as Record<string, string>) ?? {}),
         })
       : null;
 

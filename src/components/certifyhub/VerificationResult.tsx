@@ -70,7 +70,10 @@ function CertificateCard({
       )}
     >
       <div
-        className={cn("pointer-events-none absolute -right-16 -top-16 size-48 rounded-full blur-3xl", config.glow)}
+        className={cn(
+          "pointer-events-none absolute -right-16 -top-16 size-48 rounded-full blur-3xl",
+          config.glow,
+        )}
         aria-hidden="true"
       />
       <div className="relative flex flex-col gap-5">
@@ -125,7 +128,6 @@ function CertificateCard({
             className="h-[420px] w-full rounded-2xl border border-border bg-white"
           />
         )}
-
       </div>
     </div>
   );

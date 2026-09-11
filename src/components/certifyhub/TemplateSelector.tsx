@@ -37,10 +37,7 @@ export function TemplateSelector({
   const [search, setSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<CertificateTemplate | null>(null);
 
-  const activeTemplates = useMemo(
-    () => templates.filter((t) => !t.is_archived),
-    [templates],
-  );
+  const activeTemplates = useMemo(() => templates.filter((t) => !t.is_archived), [templates]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return activeTemplates;

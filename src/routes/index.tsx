@@ -58,7 +58,6 @@ function Index() {
               Verify now
             </a>
           </div>
-
         </nav>
 
         <div className="relative overflow-hidden">

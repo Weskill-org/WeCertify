@@ -68,7 +68,11 @@ export function IssuerManagerDialog({
   const editIssuerFn = useServerFn(updateIssuer);
   const removeIssuerFn = useServerFn(deleteIssuer);
 
-  const { data: issuers, isLoading, error: queryError } = useQuery({
+  const {
+    data: issuers,
+    isLoading,
+    error: queryError,
+  } = useQuery({
     queryKey: ["managed-issuers"],
     queryFn: () => fetchIssuers({}),
     enabled: open,
@@ -228,15 +232,15 @@ export function IssuerManagerDialog({
               {mode === "list"
                 ? "Manage Certificate Issuers"
                 : mode === "create"
-                ? "Add New Certificate Issuer"
-                : "Edit Certificate Issuer"}
+                  ? "Add New Certificate Issuer"
+                  : "Edit Certificate Issuer"}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {mode === "list"
                 ? "Authorized staff accounts permitted to issue and manage Weskill certificates."
                 : mode === "create"
-                ? "Create login credentials for a new certificate issuer."
-                : `Update profile, role, or reset password for ${editingIssuer?.email}.`}
+                  ? "Create login credentials for a new certificate issuer."
+                  : `Update profile, role, or reset password for ${editingIssuer?.email}.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -289,7 +293,8 @@ export function IssuerManagerDialog({
                 </div>
               ) : queryError ? (
                 <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-                  Could not load issuers: {queryError instanceof Error ? queryError.message : "Error"}
+                  Could not load issuers:{" "}
+                  {queryError instanceof Error ? queryError.message : "Error"}
                 </div>
               ) : filteredIssuers.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -372,8 +377,8 @@ export function IssuerManagerDialog({
                               isSelf
                                 ? "Cannot delete your own account"
                                 : isSuperAdmin
-                                ? "Administrators cannot be deleted"
-                                : "Delete issuer account"
+                                  ? "Administrators cannot be deleted"
+                                  : "Delete issuer account"
                             }
                           >
                             <Trash2 className="size-3.5" />
@@ -441,7 +446,11 @@ export function IssuerManagerDialog({
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     title={showCreatePassword ? "Hide password" : "Show password"}
                   >
-                    {showCreatePassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showCreatePassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
@@ -599,8 +608,8 @@ export function IssuerManagerDialog({
             <AlertDialogTitle className="font-display">Delete Issuer Account</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the issuer{" "}
-              <strong className="text-foreground">{deletingIssuer?.email}</strong>?
-              This will revoke all certificate issuing access and permanently remove their account.
+              <strong className="text-foreground">{deletingIssuer?.email}</strong>? This will revoke
+              all certificate issuing access and permanently remove their account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -613,7 +622,11 @@ export function IssuerManagerDialog({
               disabled={submitting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {submitting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              {submitting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
               Delete Account
             </AlertDialogAction>
           </AlertDialogFooter>

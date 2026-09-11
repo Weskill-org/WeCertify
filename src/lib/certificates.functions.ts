@@ -21,7 +21,6 @@ export type VerificationResult =
   | { outcome: "expired" | "revoked"; certificate: CertificateRecord }
   | { outcome: "not_found"; query: string };
 
-
 const inputSchema = z.object({
   certificateNumber: z
     .string()
@@ -46,9 +45,7 @@ export const verifyCertificate = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<VerificationResult> => {
     const url =
-      process.env["VITE_SUPABASE_URL"] ??
-      process.env["SUPABASE_URL"] ??
-      DEFAULT_SUPABASE_URL;
+      process.env["VITE_SUPABASE_URL"] ?? process.env["SUPABASE_URL"] ?? DEFAULT_SUPABASE_URL;
     const key =
       process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
       process.env["SUPABASE_PUBLISHABLE_KEY"] ??
@@ -107,8 +104,6 @@ export const verifyCertificate = createServerFn({ method: "POST" })
           })
         : null,
     };
-
-
 
     if (certificate.status === "revoked") return { outcome: "revoked", certificate };
     if (certificate.status === "expired" || isPastDate(certificate.expiry_date)) {

@@ -51,11 +51,7 @@ export function extractCustomVariables(html: string): string[] {
  */
 export function renderTemplate(html: string, values: Record<string, string | null | undefined>) {
   const escape = (raw: string) =>
-    raw
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   // Auto-populate verification URL and QR code if certificate_number is provided
   const certNumber = values["certificate_number"];
@@ -87,4 +83,3 @@ export function renderTemplate(html: string, values: Record<string, string | nul
     return value ? escape(String(value)) : "";
   });
 }
-

@@ -469,13 +469,21 @@ export const listIssuers = createServerFn({ method: "GET" })
       throw new Error(error.message);
     }
 
-    return (data ?? []).map((row: { id: string; email: string; full_name?: string | null; role: "admin" | "issuer" | "user"; created_at: string }) => ({
-      id: row.id,
-      email: row.email,
-      fullName: row.full_name || "",
-      role: row.role,
-      createdAt: row.created_at,
-    }));
+    return (data ?? []).map(
+      (row: {
+        id: string;
+        email: string;
+        full_name?: string | null;
+        role: "admin" | "issuer" | "user";
+        created_at: string;
+      }) => ({
+        id: row.id,
+        email: row.email,
+        fullName: row.full_name || "",
+        role: row.role,
+        createdAt: row.created_at,
+      }),
+    );
   });
 
 const createIssuerSchema = z.object({
@@ -559,4 +567,3 @@ export const deleteIssuer = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
-

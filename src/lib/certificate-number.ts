@@ -72,9 +72,7 @@ export function generateTimeBasedCertificateNumber(
 ): string {
   const normalizedPrefix = prefix.trim().toUpperCase() || DEFAULT_CERTIFICATE_PREFIX;
   const existingSet = new Set(
-    existingNumbers
-      ? Array.from(existingNumbers).map((n) => n.trim().toUpperCase())
-      : [],
+    existingNumbers ? Array.from(existingNumbers).map((n) => n.trim().toUpperCase()) : [],
   );
 
   const now = Date.now();

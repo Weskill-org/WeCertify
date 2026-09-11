@@ -210,7 +210,8 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                 Certificate Email Delivery
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Powered by Supabase Mail system. Manage your sender profile and notification templates.
+                Powered by Supabase Mail system. Manage your sender profile and notification
+                templates.
               </DialogDescription>
             </div>
           </div>
@@ -221,7 +222,8 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="size-4 shrink-0 text-emerald" />
             <span>
-              <strong>Supabase Mail System Active:</strong> Certificates are dispatched directly through your Supabase project with automated delivery logging.
+              <strong>Supabase Mail System Active:</strong> Certificates are dispatched directly
+              through your Supabase project with automated delivery logging.
             </span>
           </div>
         </div>
@@ -309,7 +311,8 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                       Default Email Body
                     </Label>
                     <span className="text-[11px] text-muted-foreground">
-                      Supports mustache conditionals like <code>&#123;&#123;#grade&#125;&#125;...&#123;&#123;/grade&#125;&#125;</code>
+                      Supports mustache conditionals like{" "}
+                      <code>&#123;&#123;#grade&#125;&#125;...&#123;&#123;/grade&#125;&#125;</code>
                     </span>
                   </div>
                   <Textarea
@@ -344,7 +347,11 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                     disabled={saving}
                     className="bg-gold hover:bg-gold-dark text-gold-foreground font-semibold px-5 shadow-gold gap-2"
                   >
-                    {saving ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                    {saving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Mail className="size-4" />
+                    )}
                     {saving ? "Saving…" : "Save Template Settings"}
                   </Button>
                 </div>
@@ -405,14 +412,21 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    By default, Supabase Mail dispatches certificates seamlessly. If your organization uses Resend with a custom verified domain (e.g., <code>yourdomain.com</code>), enter your Resend API Key below or set it as a Supabase Secret (<code>RESEND_API_KEY</code>).
+                    By default, Supabase Mail dispatches certificates seamlessly. If your
+                    organization uses Resend with a custom verified domain (e.g.,{" "}
+                    <code>yourdomain.com</code>), enter your Resend API Key below or set it as a
+                    Supabase Secret (<code>RESEND_API_KEY</code>).
                   </p>
                   <div className="relative">
                     <Input
                       type={showApiKey ? "text" : "password"}
                       value={resendApiKey}
                       onChange={(e) => setResendApiKey(e.target.value)}
-                      placeholder={hasStoredApiKey ? "•••••••••••••••• (Leave blank to keep stored key)" : "re_123456789..."}
+                      placeholder={
+                        hasStoredApiKey
+                          ? "•••••••••••••••• (Leave blank to keep stored key)"
+                          : "re_123456789..."
+                      }
                       className="h-10 text-sm pr-10 font-mono"
                     />
                     <button
@@ -431,7 +445,11 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                     disabled={saving}
                     className="bg-gold hover:bg-gold-dark text-gold-foreground font-semibold px-5 shadow-gold gap-2"
                   >
-                    {saving ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                    {saving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Mail className="size-4" />
+                    )}
                     {saving ? "Saving…" : "Save Sender Settings"}
                   </Button>
                 </div>
@@ -447,7 +465,8 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                     Send Test Email via Supabase
                   </span>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Verify that Supabase Mail delivery is functioning properly. Enter an email address to receive a sample certificate delivery notification.
+                    Verify that Supabase Mail delivery is functioning properly. Enter an email
+                    address to receive a sample certificate delivery notification.
                   </p>
                 </div>
 
@@ -472,7 +491,11 @@ export function EmailSettingsDialog({ open, onOpenChange, onSaved }: EmailSettin
                     disabled={testing}
                     className="bg-gold hover:bg-gold-dark text-gold-foreground font-semibold px-5 shadow-gold gap-2"
                   >
-                    {testing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                    {testing ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Send className="size-4" />
+                    )}
                     {testing ? "Testing Dispatch…" : "Send Test via Supabase"}
                   </Button>
                 </div>

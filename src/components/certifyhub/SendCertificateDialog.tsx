@@ -243,8 +243,12 @@ export function SendCertificateDialog({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recipient:</span>
-                  <span className="text-sm font-semibold text-foreground truncate">{certificate.holder_name}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Recipient:
+                  </span>
+                  <span className="text-sm font-semibold text-foreground truncate">
+                    {certificate.holder_name}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground truncate mt-0.5">
                   {certificate.certification_title}
@@ -314,7 +318,8 @@ export function SendCertificateDialog({
               <div className="flex items-center gap-2">
                 <AlertCircle className="size-3.5 shrink-0" />
                 <span>
-                  <strong>SMTP not configured:</strong> Configure SMTP in Email Settings to deliver emails.
+                  <strong>SMTP not configured:</strong> Configure SMTP in Email Settings to deliver
+                  emails.
                 </span>
               </div>
               {handleOpenSettings && (
@@ -461,7 +466,8 @@ export function SendCertificateDialog({
                 Certificate Preview: {templateName || "Assigned Design"}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                High-resolution preview of the assigned certificate template. This design is attached to the email as a PDF.
+                High-resolution preview of the assigned certificate template. This design is
+                attached to the email as a PDF.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-3">

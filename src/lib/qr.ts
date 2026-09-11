@@ -101,4 +101,3 @@ export function extractCertificateId(payload: string): string | null {
   if (/^[A-Za-z0-9-_/]{4,64}$/.test(raw)) return raw.toUpperCase();
   return null;
 }
-

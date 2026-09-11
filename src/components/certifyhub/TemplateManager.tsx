@@ -338,7 +338,8 @@ export function TemplateManager({
 
         {filterTab === "archived" && (
           <p className="text-xs text-muted-foreground">
-            Archived templates are hidden from the certificate issuance dropdown but remain preserved.
+            Archived templates are hidden from the certificate issuance dropdown but remain
+            preserved.
           </p>
         )}
       </div>
